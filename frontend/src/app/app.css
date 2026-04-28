@@ -1,1 +1,105 @@
 @import "tailwindcss";
+
+/* ── Class-based dark mode ─────────────────────────────── */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ── Theme tokens → Tailwind utilities ─────────────────── */
+@theme {
+  --color-accent:       #00C2D4;
+  --color-accent-hover: #00A8B8;
+
+  --font-display: 'Syne', sans-serif;
+  --font-mono:    'IBM Plex Mono', monospace;
+  --font-sans:    'DM Sans', sans-serif;
+}
+
+/* ── CSS variables (light) ─────────────────────────────── */
+:root {
+  --bg-base:      #F0EFEB;
+  --bg-card:      #FFFFFF;
+  --border-col:   #D8D7D2;
+  --text-primary: #0F0F0E;
+  --text-muted:   #6B6A65;
+  --accent:       #00C2D4;
+  --accent-hover: #00A8B8;
+}
+
+/* ── CSS variables (dark) ──────────────────────────────── */
+.dark {
+  --bg-base:      #0F0F0E;
+  --bg-card:      #1A1A18;
+  --border-col:   #2E2E2B;
+  --text-primary: #F0EFEB;
+  --text-muted:   #6B6A65;
+  --accent:       #00C2D4;
+  --accent-hover: #00D8EE;
+}
+
+/* ── Base body ─────────────────────────────────────────── */
+body {
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  font-family: 'DM Sans', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─────────────────────────────────────────────────────────
+   Below: ONLY things that cannot be expressed as Tailwind
+   utility classes — complex SVG data-URIs, repeating-
+   gradient patterns, pseudo-element graphics.
+   ───────────────────────────────────────────────────────── */
+
+/* Grain noise — SVG feTurbulence, no Tailwind equivalent */
+.grain-overlay {
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='250' height='250'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.14 0'/%3E%3C/filter%3E%3Crect width='250' height='250' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 250px 250px;
+  pointer-events: none;
+  z-index: 1;
+  mix-blend-mode: overlay;
+}
+
+/* Stripe divider — repeating-linear-gradient, no Tailwind equivalent */
+.stripe-divider {
+  height: 8px;
+  flex-shrink: 0;
+  background: repeating-linear-gradient(
+    -45deg, transparent, transparent 3px, #D0CFC9 3px, #D0CFC9 4px
+  );
+}
+.dark .stripe-divider {
+  background: repeating-linear-gradient(
+    -45deg, transparent, transparent 3px, #252522 3px, #252522 4px
+  );
+}
+
+/* Decorative panel gradient + halftone pseudo-element */
+.deco-panel {
+  background: linear-gradient(148deg, #002430 0%, #004A5C 30%, #007A8C 65%, #00B8C8 100%);
+  position: relative;
+  overflow: hidden;
+}
+.deco-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(0,194,212,0.18) 1.2px, transparent 1.2px);
+  background-size: 22px 22px;
+  z-index: 1;
+  pointer-events: none;
+}
+.dark .deco-panel {
+  background: linear-gradient(148deg, #001318 0%, #002830 30%, #004A5C 65%, #006070 100%);
+}
+
+/* Custom select arrow — SVG data-URI in bg-image */
+.auth-select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236B6A65' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  appearance: none;
+  -webkit-appearance: none;
+}
