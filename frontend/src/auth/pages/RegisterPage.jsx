@@ -6,7 +6,6 @@ import {
   RiMailLine, RiLockLine,
   RiUser3Line, RiShieldLine,
 } from '@remixicon/react'
-import AuthLayout from '../components/AuthLayout'
 
 // ── Password strength logic ───────────────────────────────
 const calcStrength = (pwd) => {
@@ -73,7 +72,7 @@ const Field = ({ label, required, error, hint, children, delay = 0 }) => (
     animate={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay }}
   >
-    <label className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--text-muted)] mb-[7px] select-none">
+    <label className="flex items-center gap-1 font-mono font-normal text-[0.65rem] uppercase tracking-[0.1em] text-[var(--text-muted)] mb-[7px] select-none">
       {label}
       {required && <span className="text-accent text-[11px] leading-none">*</span>}
     </label>
@@ -81,14 +80,14 @@ const Field = ({ label, required, error, hint, children, delay = 0 }) => (
     {children}
 
     {hint && !error && (
-      <p className="font-mono text-[9px] tracking-[0.06em] text-[var(--text-muted)] mt-1.5 leading-[1.6]">
+      <p className="font-mono font-normal text-[0.65rem] tracking-[0.06em] text-[var(--text-muted)] mt-1 leading-[1.6]">
         {hint}
       </p>
     )}
 
     {error && (
       <motion.p
-        className="font-mono text-[10px] text-red-500 tracking-[0.04em] mt-1.5"
+        className="font-mono font-normal text-[0.65rem] text-red-500 tracking-[0.1em] mt-1"
         initial={{ opacity: 0, y: -4 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2 }}
@@ -102,9 +101,9 @@ const Field = ({ label, required, error, hint, children, delay = 0 }) => (
 // ── Base input classes ────────────────────────────────────
 const inputBase = (hasError) =>
   [
-    'w-full h-12 px-4 bg-transparent',
+    'w-full h-11 px-4 bg-transparent',
     'border border-[var(--border-col)] rounded-[2px]',
-    'text-[var(--text-primary)] font-sans text-[0.9375rem]',
+    'text-[var(--text-primary)] font-sans font-normal text-[0.9rem]',
     'placeholder:text-[var(--text-muted)] placeholder:opacity-60',
     'outline-none transition-colors duration-200',
     'focus:border-accent',
@@ -177,24 +176,27 @@ const RegisterPage = () => {
   }
 
   return (
-    <AuthLayout>
+    <>
       {/* Heading */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-        className="mb-8"
+        className="mb-5"
       >
-        <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--text-muted)] mb-2">
+        <p className="font-mono font-normal text-[0.65rem] uppercase tracking-[0.15em] text-[var(--text-muted)] mb-2">
           — New account
         </p>
-        <h2 className="font-display font-extrabold text-[var(--text-primary)] text-[2rem] leading-[1.1] tracking-[-0.025em]">
+        <h2
+          className="font-display font-semibold text-[var(--text-primary)] leading-[1.05] tracking-[-0.01em]"
+          style={{ fontSize: 'clamp(2rem, 4vw, 3rem)' }}
+        >
           Join Incido.<br />Start responding.
         </h2>
       </motion.div>
 
       {/* Form */}
-      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
+      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-[14px]">
 
         {/* ── Section: Account Info ──────────────────────── */}
         <SectionLabel delay={0.06}>Account Info</SectionLabel>
@@ -316,8 +318,8 @@ const RegisterPage = () => {
           id="register-submit"
           type="submit"
           className={[
-            'w-full h-12 bg-accent text-[#0F0F0E]',
-            'font-sans font-semibold text-[0.8125rem] uppercase tracking-[0.08em]',
+            'w-full h-11 bg-accent text-[#0F0F0E]',
+            'font-mono font-medium text-[0.75rem] uppercase tracking-[0.15em]',
             'rounded-[2px] border-none cursor-pointer',
             'transition-all duration-200',
             'hover:brightness-110 hover:-translate-y-px',
@@ -331,7 +333,7 @@ const RegisterPage = () => {
 
         {/* Footer link */}
         <motion.p
-          className="text-center font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-muted)] mt-1"
+          className="text-center font-mono font-normal text-[0.65rem] uppercase tracking-[0.1em] text-[var(--text-muted)] mt-1"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
@@ -345,7 +347,7 @@ const RegisterPage = () => {
           </Link>
         </motion.p>
       </form>
-    </AuthLayout>
+    </>
   )
 }
 

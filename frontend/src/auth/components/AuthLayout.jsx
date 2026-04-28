@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, Outlet } from 'react-router-dom'
 import { motion } from 'motion/react'
 import '../../app/app.css'
 
@@ -24,7 +24,7 @@ const TabLinks = () => {
       <Link
         key={to}
         to={to}
-        className={`font-mono text-[10px] uppercase tracking-[0.12em] pb-1 border-b-2 transition-colors duration-200 ${
+        className={`font-mono font-medium text-[0.7rem] uppercase tracking-[0.12em] pb-1 border-b-2 transition-colors duration-200 ${
           active
             ? 'text-[var(--text-primary)] border-accent'
             : 'text-[var(--text-muted)] border-transparent hover:text-[var(--text-primary)]'
@@ -56,19 +56,58 @@ const DecoStripe = () => (
   }} />
 )
 
-const DecoPanel = ({ compact = false }) => {
+const DecoPanelContent = ({ alignRight = false }) => (
+  <div className={`flex flex-col h-full ${alignRight ? 'items-end text-right' : 'items-start text-left'}`}>
+    <LogoBox light />
+
+    {/* Tagline */}
+    <div className={`flex-1 flex flex-col justify-center mt-8 ${alignRight ? 'items-end' : 'items-start'}`}>
+      <motion.h1
+        className="font-display font-semibold text-white leading-[1.0] tracking-[-0.01em]"
+        style={{ fontSize: 'clamp(2.5rem, 5vw, 4rem)', maxWidth: 300 }}
+      >
+        Built for scale.<br />Designed for<br />humans.
+      </motion.h1>
+      <motion.p
+        className="font-mono font-normal uppercase leading-[1.8] mt-5"
+        style={{ fontSize: '0.6rem', letterSpacing: '0.12em', color: 'rgba(255,255,255,0.45)', maxWidth: 260 }}
+      >
+        Incident response infrastructure<br />for modern engineering teams.
+      </motion.p>
+    </div>
+
+    {/* Stats */}
+    <div className={`shrink-0 flex flex-col ${alignRight ? 'items-end' : 'items-start'}`}>
+      {STATS.map((stat, idx) => (
+        <div key={idx} className="w-full">
+          <div className={`py-3 flex flex-col ${alignRight ? 'items-end' : 'items-start'}`}>
+            <div className="font-display font-medium text-white text-[2rem] leading-none">
+              {stat.value}
+            </div>
+            <div className="font-mono font-normal text-[0.6rem] uppercase tracking-[0.12em] text-white/55 mt-1">
+              {stat.label}
+            </div>
+          </div>
+          {idx < STATS.length - 1 && <DecoStripe />}
+        </div>
+      ))}
+    </div>
+  </div>
+)
+
+const DecoPanel = ({ compact = false, isRegister = false }) => {
   if (compact) {
     return (
       <div className="deco-panel w-full flex items-center px-10 gap-12" style={{ height: 160 }}>
         <div className="grain-overlay" />
-        <p className="relative z-10 font-display font-extrabold text-white leading-tight text-[1.125rem] max-w-[200px] tracking-[-0.02em]">
+        <p className="relative z-10 font-display font-semibold text-white leading-tight text-[1.125rem] max-w-[200px] tracking-[-0.02em]">
           Built for scale.<br />Designed for humans.
         </p>
         <div className="relative z-10 flex gap-10 ml-auto">
           {STATS.slice(0, 2).map((s, i) => (
             <div key={i}>
-              <div className="font-display font-extrabold text-white text-xl leading-none tracking-[-0.02em]">{s.value}</div>
-              <div className="font-mono text-[9px] uppercase tracking-[0.12em] text-white/55 mt-1">{s.label}</div>
+              <div className="font-display font-medium text-white text-[2rem] leading-none">{s.value}</div>
+              <div className="font-mono font-normal text-[0.6rem] uppercase tracking-[0.12em] text-white/55 mt-1">{s.label}</div>
             </div>
           ))}
         </div>
@@ -77,62 +116,30 @@ const DecoPanel = ({ compact = false }) => {
   }
 
   return (
-    <motion.div
-      className="deco-panel h-full flex flex-col p-10"
-      initial={{ opacity: 0, x: -24 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-    >
+    <div className="deco-panel relative h-full w-full overflow-hidden">
       <div className="grain-overlay" />
 
-      <div className="relative z-10 flex flex-col h-full">
-        <LogoBox light />
-
-        {/* Tagline */}
-        <div className="flex-1 flex flex-col justify-center mt-8">
-          <motion.h1
-            className="font-display font-extrabold text-white leading-[1.08] tracking-[-0.025em]"
-            style={{ fontSize: '2.25rem', maxWidth: 300 }}
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-          >
-            Built for scale.<br />Designed for<br />humans.
-          </motion.h1>
-          <motion.p
-            className="font-mono uppercase leading-[1.8] mt-5"
-            style={{ fontSize: 10, letterSpacing: '0.12em', color: 'rgba(255,255,255,0.45)', maxWidth: 260 }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.38, duration: 0.5 }}
-          >
-            Incident response infrastructure<br />for modern engineering teams.
-          </motion.p>
+      {/* Cross-fading container wrapper */}
+      <div className="absolute inset-10 z-10">
+        
+        {/* Left-aligned state (Sign In) */}
+        <div 
+          className="absolute inset-0 transition-opacity duration-500 ease-in-out"
+          style={{ opacity: isRegister ? 0 : 1, pointerEvents: isRegister ? 'none' : 'auto' }}
+        >
+          <DecoPanelContent alignRight={false} />
         </div>
 
-        {/* Stats */}
-        <motion.div
-          className="shrink-0"
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.48, duration: 0.5 }}
+        {/* Right-aligned state (Register) */}
+        <div 
+          className="absolute inset-0 transition-opacity duration-500 ease-in-out"
+          style={{ opacity: isRegister ? 1 : 0, pointerEvents: isRegister ? 'auto' : 'none' }}
         >
-          {STATS.map((stat, idx) => (
-            <div key={idx}>
-              <div className="py-3">
-                <div className="font-display font-extrabold text-white text-2xl leading-none tracking-[-0.02em]">
-                  {stat.value}
-                </div>
-                <div className="font-mono text-[9px] uppercase tracking-[0.14em] text-white/55 mt-1">
-                  {stat.label}
-                </div>
-              </div>
-              {idx < STATS.length - 1 && <DecoStripe />}
-            </div>
-          ))}
-        </motion.div>
+          <DecoPanelContent alignRight={true} />
+        </div>
+
       </div>
-    </motion.div>
+    </div>
   )
 }
 
@@ -145,18 +152,37 @@ const DecoPanel = ({ compact = false }) => {
 //  - Inner centering wrapper: min-h-full flex items-center →
 //    centers form when it fits; scrolls from top when it doesn't
 
-const AuthLayout = ({ children }) => {
+const AuthLayout = () => {
+  const { pathname } = useLocation()
+  const isRegister = pathname === '/register'
+
   return (
     // h-screen + overflow-hidden = hard viewport boundary, no page scroll
-    <div className="h-screen overflow-hidden flex flex-col lg:flex-row bg-[var(--bg-base)]">
+    <div className={`auth-wrapper h-screen overflow-hidden flex flex-col lg:flex-row bg-[var(--bg-base)] ${isRegister ? 'swapped' : ''}`}>
+      <style>{`
+        @media (min-width: 1024px) {
+          .auth-wrapper {
+            position: relative;
+          }
+          .slide-panel {
+            transition: transform 500ms cubic-bezier(0.4, 0, 0.2, 1);
+            will-change: transform;
+          }
+          .auth-wrapper.swapped .slide-panel-left {
+            transform: translateX(calc(100vw - 100%));
+          }
+          .auth-wrapper.swapped .slide-panel-right {
+            transform: translateX(calc(-100vw + 100%));
+          }
+        }
+      `}</style>
 
-      {/* Left decorative column — desktop only, full height */}
-      <div className="hidden lg:block shrink-0 h-full" style={{ width: '45%' }}>
-        <DecoPanel />
+      <div className="slide-panel slide-panel-left hidden lg:block shrink-0 h-full relative z-20" style={{ width: '45%' }}>
+        <DecoPanel isRegister={isRegister} />
       </div>
 
       {/* Right / main column — fills remaining width, full height */}
-      <div className="flex flex-1 flex-col h-full overflow-hidden bg-[var(--bg-base)]">
+      <div className="slide-panel slide-panel-right flex flex-1 flex-col h-full overflow-hidden bg-[var(--bg-base)] relative z-10">
 
         {/* Mobile: 4px cyan accent bar — shrink-0 so it never collapses */}
         <div className="lg:hidden h-1 bg-accent shrink-0" />
@@ -198,14 +224,17 @@ const AuthLayout = ({ children }) => {
                 'w-full bg-[var(--bg-card)]',
                 'py-7 px-5',
                 'md:max-w-[480px] md:border md:border-[var(--border-col)]',
-                'md:rounded-[2px] md:shadow-[0_4px_32px_rgba(0,0,0,0.06)]',
+                'md:shadow-[0_4px_32px_rgba(0,0,0,0.06)]',
                 'md:px-10 md:py-8',
+                'transition-all duration-300',
+                'hover:rounded-xl hover:border-accent',
+                'focus-within:rounded-xl focus-within:border-accent',
               ].join(' ')}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
               transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: 0.08 }}
             >
-              {children}
+              <Outlet />
             </motion.div>
           </div>
         </div>
