@@ -339,12 +339,13 @@ const RegisterPage = () => {
           id="register-submit"
           type="submit"
           className={[
-            'w-full h-10 bg-accent text-[#0F0F0E]',
+            'w-full h-10 bg-[var(--text-primary)] text-[var(--bg-card)]',
             'font-mono font-medium text-[0.75rem] uppercase tracking-[0.15em]',
             'rounded-[2px] border-none cursor-pointer',
             'transition-all duration-200',
-            'hover:brightness-110 hover:-translate-y-px',
-            'active:translate-y-0 active:brightness-95',
+            'hover:opacity-90 hover:-translate-y-px',
+            'focus:outline-2 focus:outline-accent focus:outline-offset-2',
+            'active:translate-y-0 active:opacity-100',
             'relative overflow-hidden',
           ].join(' ')}
           whileTap={{ scale: 0.985 }}

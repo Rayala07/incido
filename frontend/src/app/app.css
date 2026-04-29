@@ -78,7 +78,11 @@ body {
 
 /* Decorative panel gradient + halftone pseudo-element */
 .deco-panel {
-  background: linear-gradient(148deg, #002430 0%, #004A5C 30%, #007A8C 65%, #00B8C8 100%);
+  background-color: #03070A;
+  background-image: 
+    radial-gradient(ellipse 80% 80% at 80% 10%, rgba(0, 194, 212, 0.12) 0%, transparent 70%),
+    radial-gradient(circle at 10% 90%, rgba(0, 74, 92, 0.25) 0%, transparent 60%),
+    linear-gradient(180deg, rgba(3, 7, 10, 0) 0%, #010304 100%);
   position: relative;
   overflow: hidden;
 }
@@ -86,13 +90,17 @@ body {
   content: '';
   position: absolute;
   inset: 0;
-  background-image: radial-gradient(circle, rgba(0,194,212,0.18) 1.2px, transparent 1.2px);
-  background-size: 22px 22px;
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 24px 24px;
   z-index: 1;
   pointer-events: none;
 }
 .dark .deco-panel {
-  background: linear-gradient(148deg, #001318 0%, #002830 30%, #004A5C 65%, #006070 100%);
+  background-color: #020406;
+  background-image: 
+    radial-gradient(ellipse 80% 80% at 80% 10%, rgba(0, 194, 212, 0.08) 0%, transparent 70%),
+    radial-gradient(circle at 10% 90%, rgba(0, 74, 92, 0.15) 0%, transparent 60%),
+    linear-gradient(180deg, rgba(2, 4, 6, 0) 0%, #010203 100%);
 }
 
 /* Custom select arrow — SVG data-URI in bg-image */
