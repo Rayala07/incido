@@ -218,14 +218,14 @@ const AuthLayout = () => {
         */}
         <div className="flex-1 min-h-0 overflow-y-auto">
           {/* min-h-full + flex items-center = center when fits, top-align when scrolling */}
-          <div className="min-h-full flex items-center justify-center px-5 py-8">
+          <div className="min-h-full flex items-center justify-center px-5 py-4">
             <motion.div
               className={[
                 'w-full bg-[var(--bg-card)]',
                 'py-7 px-5',
                 'md:max-w-[480px] md:border md:border-[var(--border-col)]',
                 'md:shadow-[0_4px_32px_rgba(0,0,0,0.06)]',
-                'md:px-10 md:py-8',
+                'md:px-10 md:py-6',
                 'transition-all duration-300',
                 'hover:rounded-xl hover:border-accent',
                 'focus-within:rounded-xl focus-within:border-accent',

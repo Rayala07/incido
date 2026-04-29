@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'motion/react'
 import { RiEyeLine, RiEyeOffLine, RiMailLine, RiLockLine } from '@remixicon/react'
+import { GoogleAuthButton } from '../components/GoogleAuthButton'
 
 // ── Reusable field wrapper ────────────────────────────────
 const Field = ({ label, required, error, children, delay = 0 }) => (
@@ -36,7 +37,7 @@ const Field = ({ label, required, error, children, delay = 0 }) => (
 // ── Base input classes ────────────────────────────────────
 const inputBase = (hasError) =>
   [
-    'w-full h-11 px-4 bg-transparent',
+    'w-full h-10 px-4 bg-transparent',
     'border border-[var(--border-col)] rounded-[2px]',
     'text-[var(--text-primary)] font-sans font-normal text-[0.9rem]',
     'placeholder:text-[var(--text-muted)] placeholder:opacity-60',
@@ -83,7 +84,7 @@ const LoginPage = () => {
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-        className="mb-5"
+        className="mb-4"
       >
         <p className="font-mono font-normal text-[0.65rem] uppercase tracking-[0.15em] text-[var(--text-muted)] mb-2">
           — Welcome back
@@ -96,8 +97,28 @@ const LoginPage = () => {
         </h2>
       </motion.div>
 
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay: 0.05 }}
+        className="w-full"
+      >
+        <GoogleAuthButton onClick={() => {
+          // TODO: wire Google OAuth handler
+        }} />
+        
+        {/* OR Divider */}
+        <div className="flex items-center gap-3 my-3">
+          <hr className="flex-1 border-t border-[var(--border-col)]" />
+          <span className="font-mono text-[10px] uppercase tracking-widest text-[var(--text-muted)]">
+            or
+          </span>
+          <hr className="flex-1 border-t border-[var(--border-col)]" />
+        </div>
+      </motion.div>
+
       {/* Form */}
-      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-[14px]">
+      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-3">
 
         {/* Email */}
         <Field label="Email Address" required error={errors.email} delay={0.08}>
@@ -156,12 +177,13 @@ const LoginPage = () => {
           id="login-submit"
           type="submit"
           className={[
-            'w-full h-11 bg-accent text-[#0F0F0E]',
+            'w-full h-10 bg-[var(--text-primary)] text-[var(--bg-card)]',
             'font-mono font-medium text-[0.75rem] uppercase tracking-[0.15em]',
             'rounded-[2px] border-none cursor-pointer',
             'transition-all duration-200',
-            'hover:brightness-110 hover:-translate-y-px',
-            'active:translate-y-0 active:brightness-95',
+            'hover:opacity-90 hover:-translate-y-px',
+            'focus:outline-2 focus:outline-accent focus:outline-offset-2',
+            'active:translate-y-0 active:opacity-100',
             'relative overflow-hidden',
           ].join(' ')}
           whileTap={{ scale: 0.985 }}
