@@ -6,6 +6,7 @@ import {
   RiMailLine, RiLockLine,
   RiUser3Line, RiShieldLine,
 } from '@remixicon/react'
+import { GoogleAuthButton } from '../components/GoogleAuthButton'
 
 // ── Password strength logic ───────────────────────────────
 const calcStrength = (pwd) => {
@@ -101,7 +102,7 @@ const Field = ({ label, required, error, hint, children, delay = 0 }) => (
 // ── Base input classes ────────────────────────────────────
 const inputBase = (hasError) =>
   [
-    'w-full h-11 px-4 bg-transparent',
+    'w-full h-10 px-4 bg-transparent',
     'border border-[var(--border-col)] rounded-[2px]',
     'text-[var(--text-primary)] font-sans font-normal text-[0.9rem]',
     'placeholder:text-[var(--text-muted)] placeholder:opacity-60',
@@ -182,7 +183,7 @@ const RegisterPage = () => {
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-        className="mb-5"
+        className="mb-4"
       >
         <p className="font-mono font-normal text-[0.65rem] uppercase tracking-[0.15em] text-[var(--text-muted)] mb-2">
           — New account
@@ -195,8 +196,28 @@ const RegisterPage = () => {
         </h2>
       </motion.div>
 
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay: 0.05 }}
+        className="w-full"
+      >
+        <GoogleAuthButton onClick={() => {
+          // TODO: wire Google OAuth handler
+        }} />
+        
+        {/* OR Divider */}
+        <div className="flex items-center gap-3 my-3">
+          <hr className="flex-1 border-t border-[var(--border-col)]" />
+          <span className="font-mono text-[10px] uppercase tracking-widest text-[var(--text-muted)]">
+            or
+          </span>
+          <hr className="flex-1 border-t border-[var(--border-col)]" />
+        </div>
+      </motion.div>
+
       {/* Form */}
-      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-[14px]">
+      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-3">
 
         {/* ── Section: Account Info ──────────────────────── */}
         <SectionLabel delay={0.06}>Account Info</SectionLabel>
@@ -318,7 +339,7 @@ const RegisterPage = () => {
           id="register-submit"
           type="submit"
           className={[
-            'w-full h-11 bg-accent text-[#0F0F0E]',
+            'w-full h-10 bg-accent text-[#0F0F0E]',
             'font-mono font-medium text-[0.75rem] uppercase tracking-[0.15em]',
             'rounded-[2px] border-none cursor-pointer',
             'transition-all duration-200',
