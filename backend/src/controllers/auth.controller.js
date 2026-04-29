@@ -29,7 +29,16 @@ export const register = async (req, res) => {
     const user = await userModel.create({ username, email, password, role });
     const token = generateToken(user);
     res.cookie("token", token);
-    res.status(201).json({ message: "User registered successfully", user });
+    res.status(201).json({
+      message: "User registered successfully",
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        usertype: user.usertype,
+      },
+    });
   } catch (error) {
     console.error("Error during registration:", error);
     res.status(500).json({ message: "Server error" });
@@ -43,9 +52,11 @@ export const login = async (req, res) => {
   const { email, password, username } = req.body;
 
   try {
-    const user = await userModel.findOne({
-      $or: [{ email }, { username }],
-    });
+    const user = await userModel
+      .findOne({
+        $or: [{ email }, { username }],
+      })
+      .select("+password");
     if (!user) {
       return res
         .status(400)
@@ -59,7 +70,18 @@ export const login = async (req, res) => {
     }
     const token = generateToken(user);
     res.cookie("token", token);
-    res.json({ message: "Login successful", user });
+    res.json({
+      message: "Login successful",
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        usertype: user.usertype,
+        role: user.role,
+        isVerified: user.isVerified,
+      },
+    });
   } catch (error) {
     console.error("Error during login:", error);
     res.status(500).json({ message: "Server error" });
@@ -70,5 +92,32 @@ export const login = async (req, res) => {
 // route: POST /api/auth/logout
 export const logout = (req, res) => {
   res.clearCookie("token");
-  res.json({ message: "Logout successful" });
+  res.status(200).json({ message: "Logout successful" });
+};
+
+export const googleCallback = async (req, res) => {
+  console.log(req.user);
+  const { emails, id, displayName, photos } = req.user;
+  const email = emails[0].value;
+  const profilePic = photos[0].value;
+  try {
+    const existingUser = await userModel.findOne({ email });
+    if (existingUser) {
+      return res
+        .status(400)
+        .json({ message: "user already exists", user: existingUser });
+    }
+    const newUser = await userModel.create({
+      username: displayName,
+      email,
+      picture: profilePic,
+      googleId: id,
+      usertype: "google",
+    });
+    const token = generateToken(newUser);
+    res.cookie("token", token);
+  } catch (error) {
+    console.error("Error during Google login:", error);
+  }
+  res.redirect("http://localhost:5173/");
 };

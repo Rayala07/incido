@@ -14,12 +14,33 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: true,
+      select: false, // Exclude password from query results by default
+      required: function () {
+        return this.usertype === "local"; // Password is required only for local users
+      },
+    },
+    profile: {
+      type: String,
+      default: "",
     },
     role: {
       type: String,
       enum: ["admin", "responder"],
       default: "responder",
+    },
+    googleId: {
+      type: String,
+      unique: true,
+      sparse: true, // Allows multiple null values
+    },
+    usertype: {
+      type: String,
+      enum: ["local", "google"],
+      default: "local",
+    },
+    isVerified: {
+      type: Boolean,
+      default: false,
     },
   },
   { timestamps: true },
