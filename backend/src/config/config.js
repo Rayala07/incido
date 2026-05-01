@@ -48,4 +48,5 @@ export const config = {
   EMAIL_CLIENT_SECRET: process.env.EMAIL_CLIENT_SECRET,
   EMAIL_REFRESH_TOKEN: process.env.EMAIL_REFRESH_TOKEN,
   BASE_URL: process.env.BASE_URL || "http://localhost:3000",
+  FRONTEND_URL: process.env.FRONTEND_URL || "http://localhost:5173",
 };

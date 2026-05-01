@@ -21,18 +21,14 @@ transporter.verify((error, success) => {
   }
 });
 
-const sendEmail = async (to, subject, text, html) => {
+const sendEmail = async (to, subject, html) => {
   try {
     const info = await transporter.sendMail({
-      from: `"Your Name" <${config.EMAIL_USER}>`, // sender address
+      from: `"Incido" <${config.EMAIL_USER}>`, // sender address
       to, // list of receivers
       subject, // Subject line
-      text, // plain text body
       html, // html body
     });
-
-    console.log("Message sent: %s", info.messageId);
-    console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
     return info;
   } catch (error) {
     console.error("Error sending email:", error);
@@ -41,7 +37,7 @@ const sendEmail = async (to, subject, text, html) => {
 };
 
 const sendVerificationEmail = async (email, username) => {
-  const verificationLink = `${config.BASE_URL || "http://localhost:3000"}/api/auth/verify-email?email=${encodeURIComponent(email)}`;
+  const verificationLink = `${config.BASE_URL}/api/auth/verify-email?email=${encodeURIComponent(email)}`;
 
   const htmlContent = `
     <h2>Welcome ${username}!</h2>
@@ -50,29 +46,11 @@ const sendVerificationEmail = async (email, username) => {
     <a href="${verificationLink}" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">
       Verify Email
     </a>
-    <p>Or copy this link:</p>
-    <p>${verificationLink}</p>
     <p>If you did not register for this account, please ignore this email.</p>
   `;
 
-  const textContent = `
-    Welcome ${username}!
-    
-    Thank you for registering. Please verify your email to complete your registration.
-    
-    Click the link below to verify your email:
-    ${verificationLink}
-    
-    If you did not register for this account, please ignore this email.
-  `;
-
   try {
-    await sendEmail(
-      email,
-      "Email Verification - Indico",
-      textContent,
-      htmlContent,
-    );
+    await sendEmail(email, "Email Verification - Incido", htmlContent);
     console.log("Verification email sent to:", email);
   } catch (error) {
     console.error("Error sending verification email:", error);
