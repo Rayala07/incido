@@ -1,8 +1,16 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { motion } from 'motion/react'
-import { RiEyeLine, RiEyeOffLine, RiMailLine, RiLockLine } from '@remixicon/react'
-import { GoogleAuthButton } from '../components/GoogleAuthButton'
+import { useState, useEffect } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import { motion, AnimatePresence } from "motion/react";
+import {
+  RiEyeLine,
+  RiEyeOffLine,
+  RiMailLine,
+  RiLockLine,
+  RiAlertLine,
+  RiCheckLine,
+} from "@remixicon/react";
+import { GoogleAuthButton } from "../components/GoogleAuthButton";
+import useAuth from "../hook/useAuth";
 
 // ── Reusable field wrapper ────────────────────────────────
 const Field = ({ label, required, error, children, delay = 0 }) => (
@@ -12,70 +20,105 @@ const Field = ({ label, required, error, children, delay = 0 }) => (
     animate={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay }}
   >
-    {/* Label */}
     <label className="flex items-center gap-1 font-mono font-normal text-[0.65rem] uppercase tracking-[0.1em] text-[var(--text-muted)] mb-[7px] select-none">
       {label}
-      {required && <span className="text-accent text-[11px] leading-none">*</span>}
+      {required && (
+        <span className="text-accent text-[11px] leading-none">*</span>
+      )}
     </label>
 
     {children}
 
-    {/* Error */}
-    {error && (
-      <motion.p
-        className="font-mono font-normal text-[0.65rem] text-red-500 tracking-[0.1em] mt-1"
-        initial={{ opacity: 0, y: -4 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.2 }}
-      >
-        {error}
-      </motion.p>
-    )}
+    <AnimatePresence mode="wait">
+      {error && (
+        <motion.p
+          key={error}
+          className="font-mono font-normal text-[0.65rem] text-red-500 tracking-[0.1em] mt-1"
+          initial={{ opacity: 0, y: -4 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -4 }}
+          transition={{ duration: 0.2 }}
+        >
+          {error}
+        </motion.p>
+      )}
+    </AnimatePresence>
   </motion.div>
-)
+);
 
 // ── Base input classes ────────────────────────────────────
 const inputBase = (hasError) =>
   [
-    'w-full h-10 px-4 bg-transparent',
-    'border border-[var(--border-col)] rounded-[2px]',
-    'text-[var(--text-primary)] font-sans font-normal text-[0.9rem]',
-    'placeholder:text-[var(--text-muted)] placeholder:opacity-60',
-    'outline-none transition-colors duration-200',
-    'focus:border-accent',
-    hasError ? 'border-red-500' : '',
-  ].join(' ')
+    "w-full h-10 px-4 bg-transparent",
+    "border border-[var(--border-col)] rounded-[2px]",
+    "text-[var(--text-primary)] font-sans font-normal text-[0.9rem]",
+    "placeholder:text-[var(--text-muted)] placeholder:opacity-60",
+    "outline-none transition-colors duration-200",
+    "focus:border-accent",
+    "disabled:opacity-50 disabled:cursor-not-allowed",
+    hasError ? "border-red-500" : "",
+  ].join(" ");
 
 // ── LoginPage ─────────────────────────────────────────────
 const LoginPage = () => {
-  const [form, setForm]       = useState({ email: '', password: '' })
-  const [errors, setErrors]   = useState({})
-  const [showPwd, setShowPwd] = useState(false)
+  const { login, isLoading, error, dismissError } = useAuth();
 
-  const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }))
+  const [form, setForm]       = useState({ email: "", password: "" });
+  const [localErrors, setLocalErrors] = useState({});
+  const [showPwd, setShowPwd] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const isVerified = searchParams.get("verified") === "true";
+  const urlError = searchParams.get("error");
+
+  // Map URL errors to human-readable text
+  const urlErrorMessage = urlError === "missing_email" ? "Verification link is invalid." 
+    : urlError === "user_not_found" ? "User not found for this verification link." 
+    : urlError === "server_error" ? "Server error during verification. Please try again." : null;
+
+  // Clear API-level error when user starts typing again
+  useEffect(() => {
+    if (error) dismissError();
+    if (urlError) {
+      searchParams.delete("error");
+      setSearchParams(searchParams);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.email, form.password]);
+
+  const set = (key) => (e) =>
+    setForm((f) => ({ ...f, [key]: e.target.value }));
 
   // Client-side validation mirrors the backend loginValidator
   const validate = () => {
-    const errs = {}
+    const errs = {};
     if (!form.email)
-      errs.email = 'Email is required'
+      errs.email = "Email is required";
     else if (!/^[a-zA-Z0-9._%-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(form.email))
-      errs.email = 'Enter a valid email address'
+      errs.email = "Enter a valid email address";
     if (!form.password)
-      errs.password = 'Password is required'
+      errs.password = "Password is required";
     else if (form.password.length < 8)
-      errs.password = 'Password must be at least 8 characters'
-    return errs
-  }
+      errs.password = "Password must be at least 8 characters";
+    return errs;
+  };
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    const errs = validate()
-    if (Object.keys(errs).length) { setErrors(errs); return }
-    setErrors({})
-    // Placeholder — wire up to auth service later
-    console.log('[Login] submit payload:', form)
-  }
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const errs = validate();
+    if (Object.keys(errs).length) {
+      setLocalErrors(errs);
+      return;
+    }
+    setLocalErrors({});
+    await login({ email: form.email, password: form.password });
+    // useAuth.login handles redirect on success and sets error on failure
+  };
+
+  const handleGoogleLogin = () => {
+    // Redirect to backend Google OAuth — response comes back via cookie
+    window.location.href = `${import.meta.env.VITE_BACKEND_URL}/api/auth/google`;
+  };
 
   return (
     <>
@@ -91,22 +134,21 @@ const LoginPage = () => {
         </p>
         <h2
           className="font-display font-semibold text-[var(--text-primary)] leading-[1.05] tracking-[-0.01em]"
-          style={{ fontSize: 'clamp(2rem, 4vw, 3rem)' }}
+          style={{ fontSize: "clamp(2rem, 4vw, 3rem)" }}
         >
           Sign in to<br />your account.
         </h2>
       </motion.div>
 
+      {/* Google */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay: 0.05 }}
         className="w-full"
       >
-        <GoogleAuthButton onClick={() => {
-          // TODO: wire Google OAuth handler
-        }} />
-        
+        <GoogleAuthButton onClick={handleGoogleLogin} disabled={isLoading} />
+
         {/* OR Divider */}
         <div className="flex items-center gap-3 my-3">
           <hr className="flex-1 border-t border-[var(--border-col)]" />
@@ -117,11 +159,48 @@ const LoginPage = () => {
         </div>
       </motion.div>
 
+      {/* API-level error banner */}
+      <AnimatePresence>
+        {(error || urlErrorMessage) && (
+          <motion.div
+            className="flex items-start gap-2 px-3 py-2 mb-2 bg-red-500/10 border border-red-500/30 rounded-[2px]"
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <RiAlertLine size={14} className="text-red-400 shrink-0 mt-px" />
+            <p className="font-mono text-[0.65rem] text-red-400 tracking-[0.06em] leading-[1.6]">
+              {error || urlErrorMessage}
+            </p>
+          </motion.div>
+        )}
+
+        {isVerified && (
+          <motion.div
+            className="flex items-start gap-2 px-3 py-2 mb-2 bg-[#00C2D4]/10 border border-[#00C2D4]/30 rounded-[2px]"
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <RiCheckLine size={14} className="text-[#00C2D4] shrink-0 mt-px" />
+            <p className="font-mono text-[0.65rem] text-[#00C2D4] tracking-[0.06em] leading-[1.6]">
+              Email verified successfully! You can now sign in.
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Form */}
       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-3">
-
         {/* Email */}
-        <Field label="Email Address" required error={errors.email} delay={0.08}>
+        <Field
+          label="Email Address"
+          required
+          error={localErrors.email}
+          delay={0.08}
+        >
           <div className="relative">
             <RiMailLine
               size={15}
@@ -133,14 +212,20 @@ const LoginPage = () => {
               autoComplete="email"
               placeholder="you@company.com"
               value={form.email}
-              onChange={set('email')}
-              className={`${inputBase(!!errors.email)} pl-10`}
+              onChange={set("email")}
+              disabled={isLoading}
+              className={`${inputBase(!!localErrors.email)} pl-10`}
             />
           </div>
         </Field>
 
         {/* Password */}
-        <Field label="Password" required error={errors.password} delay={0.14}>
+        <Field
+          label="Password"
+          required
+          error={localErrors.password}
+          delay={0.14}
+        >
           <div className="relative">
             <RiLockLine
               size={15}
@@ -148,23 +233,26 @@ const LoginPage = () => {
             />
             <input
               id="login-password"
-              type={showPwd ? 'text' : 'password'}
+              type={showPwd ? "text" : "password"}
               autoComplete="current-password"
               placeholder="••••••••"
               value={form.password}
-              onChange={set('password')}
-              className={`${inputBase(!!errors.password)} pl-10 pr-12`}
+              onChange={set("password")}
+              disabled={isLoading}
+              className={`${inputBase(!!localErrors.password)} pl-10 pr-12`}
             />
             <button
               type="button"
               onClick={() => setShowPwd((v) => !v)}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors duration-200 p-0 bg-transparent border-none cursor-pointer"
-              aria-label={showPwd ? 'Hide password' : 'Show password'}
+              disabled={isLoading}
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors duration-200 p-0 bg-transparent border-none cursor-pointer disabled:opacity-50"
+              aria-label={showPwd ? "Hide password" : "Show password"}
             >
-              {showPwd
-                ? <RiEyeOffLine size={16} />
-                : <RiEyeLine    size={16} />
-              }
+              {showPwd ? (
+                <RiEyeOffLine size={16} />
+              ) : (
+                <RiEyeLine size={16} />
+              )}
             </button>
           </div>
         </Field>
@@ -176,19 +264,20 @@ const LoginPage = () => {
         <motion.button
           id="login-submit"
           type="submit"
+          disabled={isLoading}
           className={[
-            'w-full h-10 bg-[var(--text-primary)] text-[var(--bg-card)]',
-            'font-mono font-medium text-[0.75rem] uppercase tracking-[0.15em]',
-            'rounded-[2px] border-none cursor-pointer',
-            'transition-all duration-200',
-            'hover:opacity-90 hover:-translate-y-px',
-            'focus:outline-2 focus:outline-accent focus:outline-offset-2',
-            'active:translate-y-0 active:opacity-100',
-            'relative overflow-hidden',
-          ].join(' ')}
-          whileTap={{ scale: 0.985 }}
+            "w-full h-10 bg-[var(--text-primary)] text-[var(--bg-card)]",
+            "font-mono font-medium text-[0.75rem] uppercase tracking-[0.15em]",
+            "rounded-[2px] border-none cursor-pointer",
+            "transition-all duration-200",
+            "hover:opacity-90 hover:-translate-y-px",
+            "focus:outline-2 focus:outline-accent focus:outline-offset-2",
+            "active:translate-y-0 active:opacity-100",
+            "disabled:opacity-50 disabled:cursor-not-allowed disabled:translate-y-0",
+          ].join(" ")}
+          whileTap={isLoading ? {} : { scale: 0.985 }}
         >
-          Sign In
+          {isLoading ? "Signing in…" : "Sign In"}
         </motion.button>
 
         {/* Footer link */}
@@ -198,7 +287,7 @@ const LoginPage = () => {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
         >
-          No account?{' '}
+          No account?{" "}
           <Link
             to="/register"
             className="text-accent hover:underline transition-all duration-150"
@@ -208,7 +297,7 @@ const LoginPage = () => {
         </motion.p>
       </form>
     </>
-  )
-}
+  );
+};
 
-export default LoginPage
+export default LoginPage;
