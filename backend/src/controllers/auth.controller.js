@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import userModel from "../models/user.model.js";
 import { config } from "../config/config.js";
+import { sendVerificationEmail } from "../services/mail.service.js";
 
 //generat tokens function
 const generateToken = (user) => {
@@ -25,18 +26,38 @@ export const register = async (req, res) => {
         .json({ message: "User already exists", success: false });
     }
 
-    // Create new user
-    const user = await userModel.create({ username, email, password, role });
-    const token = generateToken(user);
-    res.cookie("token", token);
+    // Create new user with isVerified set to false
+    const user = await userModel.create({
+      username,
+      email,
+      password,
+      role,
+      isVerified: false,
+    });
+
+    // Send verification email
+    try {
+      await sendVerificationEmail(email, username);
+    } catch (emailError) {
+      console.error("Failed to send verification email:", emailError);
+      await userModel.deleteOne({ _id: user._id });
+      return res.status(500).json({
+        message:
+          "Failed to send verification email. Please try registering again.",
+        success: false,
+      });
+    }
+
     res.status(201).json({
-      message: "User registered successfully",
+      message:
+        "User registered successfully. Please check your email to verify your account.",
+      success: true,
       user: {
         id: user._id,
         username: user.username,
         email: user.email,
         role: user.role,
-        usertype: user.usertype,
+        isVerified: user.isVerified,
       },
     });
   } catch (error) {
@@ -68,6 +89,16 @@ export const login = async (req, res) => {
         .status(400)
         .json({ message: "Invalid credentials", success: false });
     }
+
+    // Check if user is verified
+    if (!user.isVerified) {
+      return res.status(403).json({
+        message: "Please verify your email before logging in",
+        success: false,
+        isVerified: false,
+      });
+    }
+
     const token = generateToken(user);
     res.cookie("token", token);
     res.json({
@@ -85,6 +116,43 @@ export const login = async (req, res) => {
   } catch (error) {
     console.error("Error during login:", error);
     res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Verify email
+// route: GET /api/auth/verify-email?email=user@example.com
+export const verifyEmail = async (req, res) => {
+  const { email } = req.query;
+
+  try {
+    if (!email) {
+      return res.status(400).json({
+        message: "Email is required",
+        success: false,
+      });
+    }
+
+    // Find user by email and set isVerified to true
+    const user = await userModel.findOneAndUpdate(
+      { email },
+      { isVerified: true },
+      { new: true },
+    );
+
+    if (!user) {
+      return res.status(400).json({
+        message: "User not found",
+        success: false,
+      });
+    }
+
+    res.status(200).json({
+      message: "Email verified successfully. You can now login.",
+      success: true,
+    });
+  } catch (error) {
+    console.error("Error during email verification:", error);
+    res.status(500).json({ message: "Server error", success: false });
   }
 };
 
