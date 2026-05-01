@@ -4,6 +4,7 @@ import {
   login,
   logout,
   register,
+  verifyEmail,
 } from "../controllers/auth.controller.js";
 import { loginValidator, registerValidator } from "../validation/validate.js";
 import passport from "../config/googleOauth.js";
@@ -14,6 +15,7 @@ const authRoutes = express.Router();
 authRoutes.post("/register", registerValidator, register);
 authRoutes.post("/login", loginValidator, login);
 authRoutes.post("/logout", logout);
+authRoutes.get("/verify-email", verifyEmail);
 
 // Google OAuth Register routes
 authRoutes.get(
