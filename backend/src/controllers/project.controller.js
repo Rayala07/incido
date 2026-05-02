@@ -52,7 +52,7 @@ export const createProject = async (req, res) => {
   }
 };
 
-export const getProjects = async (req, res) => {
+export const getAllProjects = async (req, res) => {
   try {
     const projects = await projectModel
       .find()
@@ -212,6 +212,147 @@ export const addMembersToProject = async (req, res) => {
     });
   } catch (error) {
     console.error("Error adding members to project:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+export const getProjectById = async (req, res) => {
+  try {
+    const { projectId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(projectId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid project ID",
+      });
+    }
+
+    const project = await projectModel
+      .findById(projectId)
+      .populate("createdBy", "name email")
+      .populate("members.user", "name email");
+
+    if (!project) {
+      return res.status(404).json({
+        success: false,
+        message: "Project not found",
+      });
+    }
+    return res.status(200).json({
+      success: true,
+      project,
+    });
+  } catch (error) {
+    console.error("Error fetching project by ID:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+export const updateProject = async (req, res) => {
+  try {
+    const { id, role } = req.user;
+    const { projectId } = req.params;
+    const { name, description } = req.body;
+
+    if (role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Only admins can update projects",
+      });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(projectId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid project ID",
+      });
+    }
+
+    const project = await projectModel
+      .findById(projectId)
+      .populate("createdBy", "name email")
+      .populate("members.user", "name email");
+    if (!project) {
+      return res.status(404).json({
+        success: false,
+        message: "Project not found",
+      });
+    }
+
+    if (name && name.trim()) {
+      const existingProject = await projectModel.findOne({
+        name: name.trim(),
+        _id: { $ne: projectId },
+      });
+      if (existingProject) {
+        return res.status(400).json({
+          success: false,
+          message: "Another project with the same name already exists",
+        });
+      }
+      project.name = name.trim();
+    }
+
+    if (description) {
+      project.description = description;
+    }
+
+    await project.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Project updated successfully",
+      project,
+    });
+  } catch (error) {
+    console.error("Error updating project:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+export const deleteProject = async (req, res) => {
+  try {
+    const { id, role } = req.user;
+    const { projectId } = req.params;
+
+    if (role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Only admins can delete projects",
+      });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(projectId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid project ID",
+      });
+    }
+
+    const project = await projectModel.findById(projectId);
+
+    if (!project) {
+      return res.status(404).json({
+        success: false,
+        message: "Project not found",
+      });
+    }
+    await project.remove();
+    return res.status(200).json({
+      success: true,
+      message: "Project deleted successfully",
+    });
+  } catch (error) {
+    console.error("Error deleting project:", error);
     return res.status(500).json({
       success: false,
       message: "Internal server error",
