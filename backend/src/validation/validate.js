@@ -1,19 +1,19 @@
-import { body } from "express-validator";
-import { validationResult } from "express-validator";
+import { body } from "express-validator"
+import { validationResult } from "express-validator"
 // ✅ Register Validation
 
 const validate = (req, res, next) => {
-  const errors = validationResult(req);
+  const errors = validationResult(req)
 
   if (!errors.isEmpty()) {
     return res.status(400).json({
       success: false,
       errors: errors.array(),
-    });
+    })
   }
 
-  next();
-};
+  next()
+}
 
 export const registerValidator = [
   body("username")
@@ -49,7 +49,7 @@ export const registerValidator = [
       'Password must contain at least one special character (!@#$%^&*(),.?":{}|<>)',
     ),
   validate,
-];
+]
 
 // ✅ Login Validation
 export const loginValidator = [
