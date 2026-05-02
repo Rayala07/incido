@@ -5,12 +5,12 @@ import '../../app/app.css'
 // ── Shared sub-components ─────────────────────────────────
 
 const LogoBox = ({ light = false }) => (
-  <div className={`inline-flex items-center justify-center w-20 h-8 border border-dashed rounded-[2px] shrink-0 ${
-    light ? 'border-white/20' : 'border-[var(--border-col)]'
-  }`}>
-    <span className={`font-mono text-[9px] uppercase tracking-[0.1em] ${
-      light ? 'text-white/45' : 'text-[var(--text-muted)]'
-    }`}>
+  <div className={`inline-flex items-center justify-center w-20 h-8 border border-dashed rounded-[2px] shrink-0`} style={{
+    borderColor: light ? 'rgba(232, 240, 255, 0.35)' : 'var(--border-col)'
+  }}>
+    <span className={`font-mono text-[9px] uppercase tracking-[0.1em]`} style={{
+      color: light ? 'rgba(232, 240, 255, 0.50)' : 'var(--text-muted)'
+    }}>
       [Logo]
     </span>
   </div>
@@ -63,14 +63,14 @@ const DecoPanelContent = ({ alignRight = false }) => (
     {/* Tagline */}
     <div className={`flex-1 flex flex-col justify-center mt-8 ${alignRight ? 'items-end' : 'items-start'}`}>
       <motion.h1
-        className="font-display font-semibold text-white leading-[1.0] tracking-[-0.01em]"
-        style={{ fontSize: 'clamp(2.5rem, 5vw, 4rem)', maxWidth: 300 }}
+        className="font-display font-semibold leading-[1.0] tracking-[-0.01em]"
+        style={{ fontSize: 'clamp(2.5rem, 5vw, 4rem)', maxWidth: 300, color: '#FFFFFF' }}
       >
         Built for scale.<br />Designed for<br />humans.
       </motion.h1>
       <motion.p
         className="font-mono font-normal uppercase leading-[1.8] mt-5"
-        style={{ fontSize: '0.6rem', letterSpacing: '0.12em', color: 'rgba(255,255,255,0.45)', maxWidth: 260 }}
+        style={{ fontSize: '0.6rem', letterSpacing: '0.12em', color: 'rgba(232, 240, 255, 0.60)', maxWidth: 260 }}
       >
         Incident response infrastructure<br />for modern engineering teams.
       </motion.p>
@@ -81,10 +81,10 @@ const DecoPanelContent = ({ alignRight = false }) => (
       {STATS.map((stat, idx) => (
         <div key={idx} className="w-full">
           <div className={`py-3 flex flex-col ${alignRight ? 'items-end' : 'items-start'}`}>
-            <div className="font-display font-medium text-white text-[2rem] leading-none">
+            <div className="font-display font-medium text-[2rem] leading-none" style={{ color: '#FFFFFF' }}>
               {stat.value}
             </div>
-            <div className="font-mono font-normal text-[0.6rem] uppercase tracking-[0.12em] text-white/55 mt-1">
+            <div className="font-mono font-normal text-[0.6rem] uppercase tracking-[0.12em] mt-1" style={{ color: 'rgba(232, 240, 255, 0.55)' }}>
               {stat.label}
             </div>
           </div>
@@ -98,16 +98,17 @@ const DecoPanelContent = ({ alignRight = false }) => (
 const DecoPanel = ({ compact = false, isRegister = false }) => {
   if (compact) {
     return (
-      <div className="deco-panel w-full flex items-center px-10 gap-12" style={{ height: 160 }}>
-        <div className="grain-overlay" />
-        <p className="relative z-10 font-display font-semibold text-white leading-tight text-[1.125rem] max-w-[200px] tracking-[-0.02em]">
+      <div className="w-full flex items-center px-10 gap-12 relative overflow-hidden" style={{ height: 160, backgroundImage: "url('/auth-panel-bg.webp')", backgroundSize: 'cover', backgroundPosition: 'center center', backgroundRepeat: 'no-repeat' }}>
+        <div aria-hidden="true" style={{ position: 'absolute', inset: 0, zIndex: 1, background: 'linear-gradient(160deg, rgba(0, 8, 32, 0.55) 0%, rgba(0, 5, 20, 0.40) 40%, rgba(0, 8, 32, 0.65) 100%)', pointerEvents: 'none' }} />
+        <div className="grain-overlay" style={{ zIndex: 2, opacity: 0.15 }} />
+        <p className="relative z-[3] font-display font-semibold leading-tight text-[1.125rem] max-w-[200px] tracking-[-0.02em]" style={{ color: '#FFFFFF' }}>
           Built for scale.<br />Designed for humans.
         </p>
-        <div className="relative z-10 flex gap-10 ml-auto">
+        <div className="relative z-[3] flex gap-10 ml-auto">
           {STATS.slice(0, 2).map((s, i) => (
             <div key={i}>
-              <div className="font-display font-medium text-white text-[2rem] leading-none">{s.value}</div>
-              <div className="font-mono font-normal text-[0.6rem] uppercase tracking-[0.12em] text-white/55 mt-1">{s.label}</div>
+              <div className="font-display font-medium text-[2rem] leading-none" style={{ color: '#FFFFFF' }}>{s.value}</div>
+              <div className="font-mono font-normal text-[0.6rem] uppercase tracking-[0.12em] mt-1" style={{ color: 'rgba(232, 240, 255, 0.55)' }}>{s.label}</div>
             </div>
           ))}
         </div>
@@ -116,11 +117,12 @@ const DecoPanel = ({ compact = false, isRegister = false }) => {
   }
 
   return (
-    <div className="deco-panel relative h-full w-full overflow-hidden">
-      <div className="grain-overlay" />
+    <div className="relative h-full w-full overflow-hidden" style={{ backgroundImage: "url('/auth-panel-bg.webp')", backgroundSize: 'cover', backgroundPosition: 'center center', backgroundRepeat: 'no-repeat' }}>
+      <div aria-hidden="true" style={{ position: 'absolute', inset: 0, zIndex: 1, background: 'linear-gradient(160deg, rgba(0, 8, 32, 0.55) 0%, rgba(0, 5, 20, 0.40) 40%, rgba(0, 8, 32, 0.65) 100%)', pointerEvents: 'none' }} />
+      <div className="grain-overlay" style={{ zIndex: 2, opacity: 0.15 }} />
 
       {/* Cross-fading container wrapper */}
-      <div className="absolute inset-10 z-10">
+      <div className="absolute inset-10 z-[3]">
         
         {/* Left-aligned state (Sign In) */}
         <div 
@@ -185,7 +187,7 @@ const AuthLayout = () => {
       <div className="slide-panel slide-panel-right flex flex-1 flex-col h-full overflow-hidden bg-[var(--bg-base)] relative z-10">
 
         {/* Mobile: 4px cyan accent bar — shrink-0 so it never collapses */}
-        <div className="lg:hidden h-1 bg-accent shrink-0" />
+        <div className="lg:hidden shrink-0" style={{ background: 'linear-gradient(90deg, #010818 0%, #1A3FD4 40%, #00C4C8 65%, #010818 100%)', height: '3px' }} />
 
         {/* Nav bar — tablet & desktop, shrink-0 */}
         <nav className="hidden md:flex items-center justify-between px-8 py-4 border-b border-[var(--border-col)] shrink-0">
@@ -224,7 +226,7 @@ const AuthLayout = () => {
                 'w-full bg-[var(--bg-card)]',
                 'py-7 px-5',
                 'md:max-w-[480px] md:border md:border-[var(--border-col)]',
-                'md:shadow-[0_4px_32px_rgba(0,0,0,0.06)]',
+                'md:shadow-[0_4px_32px_rgba(10,44,196,0.10)] dark:md:shadow-[0_4px_40px_rgba(1,8,24,0.70)]',
                 'md:px-10 md:py-6',
                 'transition-all duration-300',
                 'hover:rounded-xl hover:border-accent',

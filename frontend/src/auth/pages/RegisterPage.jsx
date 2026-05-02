@@ -118,7 +118,7 @@ const inputBase = (hasError) =>
     "text-[var(--text-primary)] font-sans font-normal text-[0.9rem]",
     "placeholder:text-[var(--text-muted)] placeholder:opacity-60",
     "outline-none transition-colors duration-200",
-    "focus:border-accent",
+    "focus:border-accent focus:shadow-[0_0_0_3px_rgba(26,63,212,0.15)]",
     "disabled:opacity-50 disabled:cursor-not-allowed",
     hasError ? "border-red-500" : "",
   ].join(" ");
@@ -444,13 +444,13 @@ const RegisterPage = () => {
           type="submit"
           disabled={isLoading}
           className={[
-            "w-full h-10 bg-[var(--text-primary)] text-[var(--bg-card)]",
+            "w-full h-10 bg-accent text-[var(--accent-text)]",
             "font-mono font-medium text-[0.75rem] uppercase tracking-[0.15em]",
             "rounded-[2px] border-none cursor-pointer",
             "transition-all duration-200",
-            "hover:opacity-90 hover:-translate-y-px",
+            "hover:bg-accent-hover hover:-translate-y-px",
             "focus:outline-2 focus:outline-accent focus:outline-offset-2",
-            "active:translate-y-0 active:opacity-100",
+            "active:bg-[#081FA8] active:translate-y-0",
             "disabled:opacity-50 disabled:cursor-not-allowed disabled:translate-y-0",
           ].join(" ")}
           whileTap={isLoading ? {} : { scale: 0.985 }}

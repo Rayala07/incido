@@ -5,8 +5,17 @@
 
 /* ── Theme tokens → Tailwind utilities ─────────────────── */
 @theme {
-  --color-accent:       #00C2D4;
-  --color-accent-hover: #00A8B8;
+  --color-brand-cobalt:  #0A2CC4;
+  --color-brand-royal:   #1A3FD4;
+  --color-brand-cyan:    #00C4C8;
+  --color-brand-volt:    #AADC00;
+  --color-brand-void:    #010818;
+  --color-brand-navy:    #060E28;
+  --color-brand-surface: #E8F0FF;
+  --color-brand-white:   #FFFFFF;
+
+  --color-accent:       var(--accent);
+  --color-accent-hover: var(--accent-hover);
 
   --font-display: 'Barlow Condensed', sans-serif;
   --font-mono:    'IBM Plex Mono', monospace;
@@ -15,24 +24,44 @@
 
 /* ── CSS variables (light) ─────────────────────────────── */
 :root {
-  --bg-base:      #F0EFEB;
-  --bg-card:      #FFFFFF;
-  --border-col:   #D8D7D2;
-  --text-primary: #0F0F0E;
-  --text-muted:   #6B6A65;
-  --accent:       #00C2D4;
-  --accent-hover: #00A8B8;
+  --bg-base:        #E8F0FF;
+  --bg-card:        #FFFFFF;
+  --border-col:     #B8CCEE;
+  --text-primary:   #060E28;
+  --text-muted:     #3A5080;
+  --accent:         #1A3FD4;
+  --accent-hover:   #0A2CC4;
+  --accent-text:    #FFFFFF;
+  --accent-subtle:  rgba(26, 63, 212, 0.08);
+  --volt:           #AADC00;
+  --divider-stripe: repeating-linear-gradient(
+                      -45deg,
+                      transparent,
+                      transparent 3px,
+                      #B8CCEE 3px,
+                      #B8CCEE 4px
+                    );
 }
 
 /* ── CSS variables (dark) ──────────────────────────────── */
 .dark {
-  --bg-base:      #0F0F0E;
-  --bg-card:      #1A1A18;
-  --border-col:   #2E2E2B;
-  --text-primary: #F0EFEB;
-  --text-muted:   #6B6A65;
-  --accent:       #00C2D4;
-  --accent-hover: #00D8EE;
+  --bg-base:        #010818;
+  --bg-card:        #060E28;
+  --border-col:     #0F2060;
+  --text-primary:   #E8F0FF;
+  --text-muted:     #5878B8;
+  --accent:         #1A3FD4;
+  --accent-hover:   #2A50E4;
+  --accent-text:    #E8F0FF;
+  --accent-subtle:  rgba(26, 63, 212, 0.18);
+  --volt:           #AADC00;
+  --divider-stripe: repeating-linear-gradient(
+                      -45deg,
+                      transparent,
+                      transparent 3px,
+                      #0F2060 3px,
+                      #0F2060 4px
+                    );
 }
 
 /* ── Base body ─────────────────────────────────────────── */
@@ -66,41 +95,7 @@ body {
 .stripe-divider {
   height: 8px;
   flex-shrink: 0;
-  background: repeating-linear-gradient(
-    -45deg, transparent, transparent 3px, #D0CFC9 3px, #D0CFC9 4px
-  );
-}
-.dark .stripe-divider {
-  background: repeating-linear-gradient(
-    -45deg, transparent, transparent 3px, #252522 3px, #252522 4px
-  );
-}
-
-/* Decorative panel gradient + halftone pseudo-element */
-.deco-panel {
-  background-color: #03070A;
-  background-image: 
-    radial-gradient(ellipse 80% 80% at 80% 10%, rgba(0, 194, 212, 0.12) 0%, transparent 70%),
-    radial-gradient(circle at 10% 90%, rgba(0, 74, 92, 0.25) 0%, transparent 60%),
-    linear-gradient(180deg, rgba(3, 7, 10, 0) 0%, #010304 100%);
-  position: relative;
-  overflow: hidden;
-}
-.deco-panel::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
-  background-size: 24px 24px;
-  z-index: 1;
-  pointer-events: none;
-}
-.dark .deco-panel {
-  background-color: #020406;
-  background-image: 
-    radial-gradient(ellipse 80% 80% at 80% 10%, rgba(0, 194, 212, 0.08) 0%, transparent 70%),
-    radial-gradient(circle at 10% 90%, rgba(0, 74, 92, 0.15) 0%, transparent 60%),
-    linear-gradient(180deg, rgba(2, 4, 6, 0) 0%, #010203 100%);
+  background: var(--divider-stripe);
 }
 
 /* Custom select arrow — SVG data-URI in bg-image */
