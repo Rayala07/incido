@@ -15,3 +15,15 @@ export const verifyUser = (req, res, next) => {
     return res.status(401).json({ success: false, message: "Unauthorized" });
   }
 };
+
+export const verifyAdmin = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({ success: false, message: "Unauthorized" });
+  }
+
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ success: false, message: "Only admins can perform this action" });
+  }
+
+  next();
+};

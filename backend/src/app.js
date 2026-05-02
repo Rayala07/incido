@@ -6,6 +6,8 @@ import authRoutes from "./routes/auth.routes.js";
 import passport from "passport";
 import cors from "cors";
 import morgan from "morgan";
+import incidentRoutes from "./routes/incident.routes.js";
+import projectRoutes from "./routes/project.routes.js";
 import { config } from "./config/config.js";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -33,5 +35,7 @@ app.use("/assets", express.static(path.join(__dirname, "assets")));
 
 // authentication routes
 app.use("/api/auth", authRoutes);
+app.use("/api/incident", incidentRoutes);
+app.use("/api/project", projectRoutes);
 
 export default app;
