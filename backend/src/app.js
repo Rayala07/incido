@@ -34,4 +34,6 @@ app.use("/assets", express.static(path.join(__dirname, "assets")));
 // authentication routes
 app.use("/api/auth", authRoutes);
 
+app.use("/api/incidents", incidentRoutes);
+
 export default app;

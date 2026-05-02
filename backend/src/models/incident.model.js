@@ -20,28 +20,27 @@ const incidentSchema = new mongoose.Schema(
 
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
+    ref: "user",
   },
 
   leader: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
+    ref: "user",
   },
 
   members: [
     {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: "user",
     },
   ],
 
   status: {
     type: String,
-    enum: ["open", "in-progress", "resolved"],
+    enum: ["open", "progress", "resolved"],
     default: "open",
   },
 
-  // 🔥 Severity system
   severity: {
     type: String,
     enum: ["low", "medium", "high"],
@@ -58,6 +57,6 @@ const incidentSchema = new mongoose.Schema(
 { timestamps: true }
 );
 
-const incidentModel = mongoose.model("Incident", incidentSchema);
+const incidentModel = mongoose.model("incident", incidentSchema);
 
 export default incidentModel;
