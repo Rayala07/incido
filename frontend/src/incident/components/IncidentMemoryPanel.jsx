@@ -27,23 +27,7 @@ const IncidentMemoryPanel = ({ status, result }) => {
       <div className="flex-1 flex flex-col relative overflow-y-auto px-5 py-4">
         {status === "idle" && (
           <div className="flex-1 flex flex-col items-center justify-center h-full gap-3">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="22"
-              height="22"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="text-[var(--text-muted)] opacity-35"
-            >
-              <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
-              <path d="M3 9h18" />
-              <path d="M9 21V9" />
-            </svg>
-            <p className="font-mono text-[11px] text-[var(--text-muted)] text-center max-w-[180px] leading-relaxed mx-auto">
+            <p className="font-mono text-[10px] text-[var(--text-muted)] text-center max-w-[180px] leading-relaxed mx-auto">
               AI will scan for similar past incidents as you type...
             </p>
           </div>
