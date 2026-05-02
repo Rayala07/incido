@@ -1,19 +1,18 @@
-import { body } from "express-validator";
-import { validationResult } from "express-validator";
+import { body, param, validationResult } from "express-validator"
 // ✅ Register Validation
 
 const validate = (req, res, next) => {
-  const errors = validationResult(req);
+  const errors = validationResult(req)
 
   if (!errors.isEmpty()) {
     return res.status(400).json({
       success: false,
       errors: errors.array(),
-    });
+    })
   }
 
-  next();
-};
+  next()
+}
 
 export const registerValidator = [
   body("username")
@@ -49,7 +48,7 @@ export const registerValidator = [
       'Password must contain at least one special character (!@#$%^&*(),.?":{}|<>)',
     ),
   validate,
-];
+]
 
 // ✅ Login Validation
 export const loginValidator = [
@@ -69,4 +68,35 @@ export const loginValidator = [
     .isLength({ min: 8 })
     .withMessage("Password must be at least 8 characters"),
   validate,
-];
+]
+
+// ✅ Incident Validation
+export const incidentValidator = [
+  body("title")
+    .trim()
+    .notEmpty()
+    .withMessage("Title is required")
+    .isLength({ min: 3 })
+    .withMessage("Title must be at least 3 characters"),
+
+  body("description")
+    .trim()
+    .notEmpty()
+    .withMessage("Description is required")
+    .isLength({ min: 10 })
+    .withMessage("Description must be at least 10 characters"),
+
+  param("projectId")
+    .trim()
+    .notEmpty()
+    .withMessage("Project ID is required")
+    .isMongoId()
+    .withMessage("Project ID must be a valid MongoDB ObjectId"),
+
+  body("severity")
+    .optional()
+    .isIn(["low", "medium", "high"])
+    .withMessage("Severity must be low, medium, or high"),
+
+  validate,
+]

@@ -1,40 +1,37 @@
-import dotenv from "dotenv";
-dotenv.config();
+import dotenv from "dotenv"
+dotenv.config()
 
 if (!process.env.MONGO_URI) {
-  throw new Error("MONGO_URI is not defined in environment variables");
+  throw new Error("MONGO_URI is not defined in environment variables")
 }
 if (!process.env.JWT_SECRET) {
-  throw new Error("JWT_SECRET is not defined in environment variables");
+  throw new Error("JWT_SECRET is not defined in environment variables")
 }
 if (!process.env.GOOGLE_CLIENT_SECRET) {
   throw new Error(
     "GOOGLE_CLIENT_SECRET is not defined in environment variables",
-  );
+  )
 }
 if (!process.env.GOOGLE_CLIENT_ID) {
-  throw new Error("GOOGLE_CLIENT_ID is not defined in environment variables");
+  throw new Error("GOOGLE_CLIENT_ID is not defined in environment variables")
 }
 if (!process.env.GOOGLE_CALLBACK_URL) {
-  throw new Error(
-    "GOOGLE_CALLBACK_URL is not defined in environment variables",
-  );
+  throw new Error("GOOGLE_CALLBACK_URL is not defined in environment variables")
 }
 if (!process.env.EMAIL_USER) {
-  throw new Error("EMAIL_USER is not defined in environment variables");
+  throw new Error("EMAIL_USER is not defined in environment variables")
 }
 if (!process.env.EMAIL_CLIENT_ID) {
-  throw new Error("EMAIL_CLIENT_ID is not defined in environment variables");
+  throw new Error("EMAIL_CLIENT_ID is not defined in environment variables")
 }
 if (!process.env.EMAIL_CLIENT_SECRET) {
-  throw new Error(
-    "EMAIL_CLIENT_SECRET is not defined in environment variables",
-  );
+  throw new Error("EMAIL_CLIENT_SECRET is not defined in environment variables")
 }
 if (!process.env.EMAIL_REFRESH_TOKEN) {
-  throw new Error(
-    "EMAIL_REFRESH_TOKEN is not defined in environment variables",
-  );
+  throw new Error("EMAIL_REFRESH_TOKEN is not defined in environment variables")
+}
+if (!process.env.GEMINI_API_KEY) {
+  throw new Error("GEMINI_API_KEY is not defined in environment variables")
 }
 
 export const config = {
@@ -47,6 +44,8 @@ export const config = {
   EMAIL_CLIENT_ID: process.env.EMAIL_CLIENT_ID,
   EMAIL_CLIENT_SECRET: process.env.EMAIL_CLIENT_SECRET,
   EMAIL_REFRESH_TOKEN: process.env.EMAIL_REFRESH_TOKEN,
+  GEMINI_API_KEY: process.env.GEMINI_API_KEY,
+  PORT: process.env.PORT || 3000,
   BASE_URL: process.env.BASE_URL || "http://localhost:3000",
   FRONTEND_URL: process.env.FRONTEND_URL || "http://localhost:5173",
-};
+}
