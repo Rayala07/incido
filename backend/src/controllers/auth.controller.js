@@ -189,3 +189,13 @@ export const googleCallback = async (req, res) => {
   }
   res.redirect("http://localhost:5173/");
 };
+
+export const getAllUsers = async (req, res) => {
+  try {
+    const users = await userModel.find().select("-password");
+    res.status(200).json({ success: true, users });
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};

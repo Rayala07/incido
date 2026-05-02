@@ -6,6 +6,8 @@ import authRoutes from "./routes/auth.routes.js";
 import passport from "passport";
 import cors from "cors";
 import morgan from "morgan";
+import incidentRoutes from "./routes/incident.routes.js";
+import projectRoutes from "./routes/project.routes.js";
 
 const app = express();
 
@@ -21,8 +23,9 @@ app.use(
   }),
 );
 
-
 // authentication routes
 app.use("/api/auth", authRoutes);
+app.use("/api/incident", incidentRoutes);
+app.use("/api/project", projectRoutes);
 
 export default app;
