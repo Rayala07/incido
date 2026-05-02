@@ -22,7 +22,6 @@ projectRoutes.post(
 )
 projectRoutes.get("/getprojects", verifyUser, getAllProjects)
 projectRoutes.get("/:projectId", verifyUser, getProjectById)
-projectRoutes.get("/getprojects", verifyUser, getProjects)
 projectRoutes.post(
   "/add-members",
   verifyUser,
