@@ -78,17 +78,17 @@ const Field = ({ label, required, error, hint, children, delay = 0 }) => (
     animate={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay }}
   >
-    <label className="flex items-center gap-1 font-mono font-normal text-[0.65rem] uppercase tracking-[0.1em] text-[var(--text-muted)] mb-[7px] select-none">
+    <label className="flex items-center gap-1 font-mono font-normal text-[0.6rem] uppercase tracking-[0.1em] text-[var(--text-secondary)] mb-1 select-none">
       {label}
       {required && (
-        <span className="text-accent text-[11px] leading-none">*</span>
+        <span className="text-accent text-[10px] leading-none">*</span>
       )}
     </label>
 
     {children}
 
     {hint && !error && (
-      <p className="font-mono font-normal text-[0.65rem] tracking-[0.06em] text-[var(--text-muted)] mt-1 leading-[1.6]">
+      <p className="font-mono font-normal text-[0.58rem] tracking-[0.05em] text-[var(--text-muted)] mt-0.5 leading-none opacity-70">
         {hint}
       </p>
     )}
@@ -97,12 +97,11 @@ const Field = ({ label, required, error, hint, children, delay = 0 }) => (
       {error && (
         <motion.p
           key={error}
-          className="font-mono font-normal text-[0.65rem] text-red-500 tracking-[0.1em] mt-1"
-          initial={{ opacity: 0, y: -4 }}
+          className="font-mono font-normal text-[0.58rem] text-red-500 tracking-[0.08em] mt-0.5 leading-none"
+          initial={{ opacity: 0, y: -3 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -4 }}
-          transition={{ duration: 0.2 }}
-        >
+          exit={{ opacity: 0, y: -3 }}
+          transition={{ duration: 0.15 }}>
           {error}
         </motion.p>
       )}
@@ -113,12 +112,12 @@ const Field = ({ label, required, error, hint, children, delay = 0 }) => (
 // ── Base input classes ────────────────────────────────────
 const inputBase = (hasError) =>
   [
-    "w-full h-10 px-4 bg-transparent",
+    "w-full h-9 px-3.5 bg-transparent",
     "border border-[var(--border-col)] rounded-[2px]",
-    "text-[var(--text-primary)] font-sans font-normal text-[0.9rem]",
+    "text-[var(--text-primary)] font-sans font-normal text-[0.85rem]",
     "placeholder:text-[var(--text-muted)] placeholder:opacity-60",
     "outline-none transition-colors duration-200",
-    "focus:border-accent focus:shadow-[0_0_0_3px_rgba(26,63,212,0.15)]",
+    "focus:border-accent focus:shadow-[0_0_0_2px_rgba(26,63,212,0.12)]",
     "disabled:opacity-50 disabled:cursor-not-allowed",
     hasError ? "border-red-500" : "",
   ].join(" ");
@@ -126,9 +125,9 @@ const inputBase = (hasError) =>
 // ── Section separator ─────────────────────────────────────
 const SectionLabel = ({ children, delay = 0 }) => (
   <motion.div
-    className="flex items-center justify-center gap-2 font-mono text-[9px] uppercase tracking-[0.18em] text-[var(--text-muted)]"
+    className="flex items-center justify-center gap-2 font-mono text-[0.55rem] uppercase tracking-[0.18em] text-[var(--text-secondary)] opacity-70"
     initial={{ opacity: 0 }}
-    animate={{ opacity: 1 }}
+    animate={{ opacity: 0.7 }}
     transition={{ delay, duration: 0.35 }}
   >
     <span className="opacity-50">—</span>
@@ -261,14 +260,14 @@ const RegisterPage = () => {
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-        className="mb-4"
+        className="mb-2"
       >
-        <p className="font-mono font-normal text-[0.65rem] uppercase tracking-[0.15em] text-[var(--text-muted)] mb-2">
+        <p className="font-mono font-normal text-[0.65rem] uppercase tracking-[0.15em] text-[var(--text-secondary)] mb-1">
           — New account
         </p>
         <h2
           className="font-display font-semibold text-[var(--text-primary)] leading-[1.05] tracking-[-0.01em]"
-          style={{ fontSize: "clamp(2rem, 4vw, 3rem)" }}
+          style={{ fontSize: "clamp(1.6rem, 3.5vw, 2.4rem)" }}
         >
           Join Incido.<br />Start responding.
         </h2>
@@ -284,7 +283,7 @@ const RegisterPage = () => {
         <GoogleAuthButton onClick={handleGoogleLogin} disabled={isLoading} />
 
         {/* OR Divider */}
-        <div className="flex items-center gap-3 my-3">
+        <div className="flex items-center gap-3 my-2">
           <hr className="flex-1 border-t border-[var(--border-col)]" />
           <span className="font-mono text-[10px] uppercase tracking-widest text-[var(--text-muted)]">
             or
@@ -312,7 +311,7 @@ const RegisterPage = () => {
       </AnimatePresence>
 
       {/* Form */}
-      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-3">
+      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-1.5">
         {/* ── Section: Account Info ──────────────────────── */}
         <SectionLabel delay={0.06}>Account Info</SectionLabel>
 
@@ -327,7 +326,7 @@ const RegisterPage = () => {
           <div className="relative">
             <RiUser3Line
               size={15}
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] pointer-events-none"
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] pointer-events-none"
             />
             <input
               id="register-username"
@@ -352,7 +351,7 @@ const RegisterPage = () => {
           <div className="relative">
             <RiMailLine
               size={15}
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] pointer-events-none"
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] pointer-events-none"
             />
             <input
               id="register-email"
@@ -380,7 +379,7 @@ const RegisterPage = () => {
           <div className="relative">
             <RiLockLine
               size={15}
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] pointer-events-none"
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] pointer-events-none"
             />
             <input
               id="register-password"
@@ -396,7 +395,7 @@ const RegisterPage = () => {
               type="button"
               onClick={() => setShowPwd((v) => !v)}
               disabled={isLoading}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors duration-200 p-0 bg-transparent border-none cursor-pointer disabled:opacity-50"
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors duration-200 p-0 bg-transparent border-none cursor-pointer disabled:opacity-50"
               aria-label={showPwd ? "Hide password" : "Show password"}
             >
               {showPwd ? <RiEyeOffLine size={16} /> : <RiEyeLine size={16} />}
@@ -416,7 +415,7 @@ const RegisterPage = () => {
           <div className="relative">
             <RiShieldLine
               size={15}
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] pointer-events-none z-10"
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] pointer-events-none z-10"
             />
             <select
               id="register-role"
@@ -436,7 +435,7 @@ const RegisterPage = () => {
         </Field>
 
         {/* Stripe divider */}
-        <div className="stripe-divider rounded-[1px] my-1" />
+        <div className="stripe-divider rounded-[1px] my-0.5" />
 
         {/* Submit */}
         <motion.button
@@ -444,7 +443,7 @@ const RegisterPage = () => {
           type="submit"
           disabled={isLoading}
           className={[
-            "w-full h-10 bg-accent text-[var(--accent-text)]",
+            "w-full h-9 bg-accent text-[var(--accent-text)]",
             "font-mono font-medium text-[0.75rem] uppercase tracking-[0.15em]",
             "rounded-[2px] border-none cursor-pointer",
             "transition-all duration-200",

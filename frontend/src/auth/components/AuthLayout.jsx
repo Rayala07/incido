@@ -27,7 +27,7 @@ const TabLinks = () => {
         className={`font-mono font-medium text-[0.7rem] uppercase tracking-[0.12em] pb-1 border-b-2 transition-colors duration-200 ${
           active
             ? 'text-[var(--text-primary)] border-accent'
-            : 'text-[var(--text-muted)] border-transparent hover:text-[var(--text-primary)]'
+            : 'text-[var(--text-secondary)] border-transparent hover:text-[var(--text-primary)]'
         }`}
       >
         {label}
@@ -220,14 +220,14 @@ const AuthLayout = () => {
         */}
         <div className="flex-1 min-h-0 overflow-y-auto">
           {/* min-h-full + flex items-center = center when fits, top-align when scrolling */}
-          <div className="min-h-full flex items-center justify-center px-5 py-4">
+          <div className="min-h-full flex items-center justify-center px-5 py-2">
             <motion.div
               className={[
                 'w-full bg-[var(--bg-card)]',
-                'py-7 px-5',
-                'md:max-w-[480px] md:border md:border-[var(--border-col)]',
+                'py-4 px-5',
+                'md:max-w-[440px] md:border md:border-[var(--border-col)]',
                 'md:shadow-[0_4px_32px_rgba(10,44,196,0.10)] dark:md:shadow-[0_4px_40px_rgba(1,8,24,0.70)]',
-                'md:px-10 md:py-6',
+                'md:px-8 md:py-4',
                 'transition-all duration-300',
                 'hover:rounded-xl hover:border-accent',
                 'focus-within:rounded-xl focus-within:border-accent',

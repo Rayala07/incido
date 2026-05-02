@@ -10,6 +10,7 @@ import LoginPage     from "./auth/pages/LoginPage";
 import RegisterPage  from "./auth/pages/RegisterPage";
 import AuthLayout    from "./auth/components/AuthLayout";
 import DashboardPage from "./dashboard/pages/DashboardPage";
+import CreateIncidentPage from "./incident/pages/CreateIncidentPage";
 
 // ── ProtectedRoute ─────────────────────────────────────────
 // Blocks unauthenticated users. Waits for session check to
@@ -63,6 +64,7 @@ export const router = createBrowserRouter([
     element: <ProtectedRoute />,
     children: [
       { path: "/dashboard", element: <DashboardPage /> },
+      { path: "/incidents/create", element: <CreateIncidentPage /> },
     ],
   },
 

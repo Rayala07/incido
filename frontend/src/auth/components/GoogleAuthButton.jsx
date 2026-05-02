@@ -9,7 +9,7 @@ export const GoogleAuthButton = ({ onClick, disabled }) => {
         'bg-[var(--bg-card)]',
         'border border-[var(--border-col)]',
         'rounded-none cursor-pointer',
-        'text-[var(--text-primary)] font-mono text-[11px] uppercase tracking-widest font-medium',
+        'text-[var(--text-secondary)] font-mono text-[11px] uppercase tracking-widest font-medium',
         'transition-all duration-150',
         'hover:bg-[var(--accent-subtle)]',
         'hover:border-accent',
