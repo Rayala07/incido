@@ -1,5 +1,6 @@
 import express from "express";
 import {
+  getAllUsers,
   googleCallback,
   login,
   logout,
@@ -17,8 +18,9 @@ const authRoutes = express.Router();
 // normal Register and Login routes
 authRoutes.post("/register", registerValidator, register);
 authRoutes.post("/login", loginValidator, login);
-authRoutes.post("/logout", logout);
+authRoutes.get("/logout", logout);
 authRoutes.get("/verify-email", verifyEmail);
+authRoutes.get("/users", verifyUser, getAllUsers);
 authRoutes.get("/me", verifyUser, getMe);
 
 // Google OAuth Register routes
