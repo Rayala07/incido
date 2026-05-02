@@ -3,6 +3,7 @@ import express from "express"
 import cookieParser from "cookie-parser"
 import { connectDB } from "./config/database.js"
 import authRoutes from "./routes/auth.routes.js"
+import actionItemRoutes from "./routes/actionItem.routes.js"
 import incidentRoutes from "./routes/incident.routes.js"
 import passport from "passport"
 import cors from "cors"
@@ -36,5 +37,8 @@ app.use("/api/auth", authRoutes)
 
 // incident routes
 app.use("/api/incidents", incidentRoutes)
+
+// action item routes
+app.use("/api/action-items", actionItemRoutes)
 
 export default app
