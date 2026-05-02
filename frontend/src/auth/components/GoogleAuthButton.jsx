@@ -1,8 +1,9 @@
-export const GoogleAuthButton = ({ onClick }) => {
+export const GoogleAuthButton = ({ onClick, disabled }) => {
   return (
     <button
       type="button"
       onClick={onClick}
+      disabled={disabled}
       className={[
         'flex items-center justify-center w-full h-10',
         'bg-white dark:bg-[var(--bg-card)]',
@@ -13,7 +14,8 @@ export const GoogleAuthButton = ({ onClick }) => {
         'hover:bg-black/[0.03] dark:hover:bg-white/[0.05]',
         'hover:border-accent',
         'focus:outline-2 focus:outline-accent focus:outline-offset-2',
-        'active:translate-y-[1px]'
+        'active:translate-y-[1px]',
+        'disabled:opacity-50 disabled:cursor-not-allowed disabled:active:translate-y-0',
       ].join(' ')}
     >
       <div className="flex items-center justify-center w-full">

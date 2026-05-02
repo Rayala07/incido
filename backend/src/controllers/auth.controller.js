@@ -33,6 +33,7 @@ export const register = async (req, res) => {
       password,
       role,
       isVerified: false,
+      profile: `${config.BASE_URL}/assets/no_profile.jpg`,
     });
 
     // Send verification email
@@ -123,13 +124,11 @@ export const login = async (req, res) => {
 // route: GET /api/auth/verify-email?email=user@example.com
 export const verifyEmail = async (req, res) => {
   const { email } = req.query;
+  const FRONTEND_URL = config.FRONTEND_URL;
 
   try {
     if (!email) {
-      return res.status(400).json({
-        message: "Email is required",
-        success: false,
-      });
+      return res.redirect(`${FRONTEND_URL}/login?error=missing_email`);
     }
 
     // Find user by email and set isVerified to true
@@ -140,19 +139,13 @@ export const verifyEmail = async (req, res) => {
     );
 
     if (!user) {
-      return res.status(400).json({
-        message: "User not found",
-        success: false,
-      });
+      return res.redirect(`${FRONTEND_URL}/login?error=user_not_found`);
     }
 
-    res.status(200).json({
-      message: "Email verified successfully. You can now login.",
-      success: true,
-    });
+    return res.redirect(`${FRONTEND_URL}/login?verified=true`);
   } catch (error) {
     console.error("Error during email verification:", error);
-    res.status(500).json({ message: "Server error", success: false });
+    return res.redirect(`${FRONTEND_URL}/login?error=server_error`);
   }
 };
 
@@ -160,34 +153,63 @@ export const verifyEmail = async (req, res) => {
 // route: POST /api/auth/logout
 export const logout = (req, res) => {
   res.clearCookie("token");
-  res.status(200).json({ message: "Logout successful" });
+  res.status(200).json({ message: "Logout successful", success: true });
+};
+
+// get current user
+// route: GET /api/auth/me
+export const getMe = async (req, res) => {
+  try {
+    const user = await userModel.findById(req.user.id).select("-password");
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+    res.status(200).json({
+      success: true,
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        usertype: user.usertype,
+        profile: user.profile,
+        isVerified: user.isVerified,
+        createdAt: user.createdAt,
+      },
+    });
+  } catch (error) {
+    console.error("Error in getMe:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
 };
 
 export const googleCallback = async (req, res) => {
-  console.log(req.user);
+  const FRONTEND_URL = config.FRONTEND_URL;
   const { emails, id, displayName, photos } = req.user;
   const email = emails[0].value;
   const profilePic = photos[0].value;
+  
   try {
-    const existingUser = await userModel.findOne({ email });
-    if (existingUser) {
-      return res
-        .status(400)
-        .json({ message: "user already exists", user: existingUser });
+    let user = await userModel.findOne({ email });
+    
+    if (!user) {
+      user = await userModel.create({
+        username: displayName,
+        email,
+        profile: profilePic,
+        googleId: id,
+        usertype: "google",
+        isVerified: true,
+      });
     }
-    const newUser = await userModel.create({
-      username: displayName,
-      email,
-      picture: profilePic,
-      googleId: id,
-      usertype: "google",
-    });
-    const token = generateToken(newUser);
+    
+    const token = generateToken(user);
     res.cookie("token", token);
+    return res.redirect(`${FRONTEND_URL}/dashboard`);
   } catch (error) {
     console.error("Error during Google login:", error);
+    return res.redirect(`${FRONTEND_URL}/login?error=server_error`);
   }
-  res.redirect("http://localhost:5173/");
 };
 
 export const getAllUsers = async (req, res) => {
