@@ -33,7 +33,8 @@ const Navbar = () => {
   };
 
   const navLink = (to, label) => {
-    const active = to === "/incidents"; // hardcoded as per instructions
+    // Exact match for dashboard/projects, or prefix match for sub-routes like /incidents/create
+    const active = pathname === to || (to !== "/" && pathname.startsWith(to));
     
     return (
       <Link
@@ -62,6 +63,7 @@ const Navbar = () => {
         {/* Center: Nav links */}
         <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-8 h-full pt-[3px]">
           {navLink("/dashboard", "Dashboard")}
+          {navLink("/projects", "Projects")}
           {navLink("/incidents", "Incidents")}
         </div>
 
