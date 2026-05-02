@@ -20,10 +20,10 @@ const Field = ({ label, required, error, children, delay = 0 }) => (
     animate={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay }}
   >
-    <label className="flex items-center gap-1 font-mono font-normal text-[0.65rem] uppercase tracking-[0.1em] text-[var(--text-muted)] mb-[7px] select-none">
+    <label className="flex items-center gap-1 font-mono font-normal text-[0.6rem] uppercase tracking-[0.1em] text-[var(--text-secondary)] mb-1 select-none">
       {label}
       {required && (
-        <span className="text-accent text-[11px] leading-none">*</span>
+        <span className="text-accent text-[10px] leading-none">*</span>
       )}
     </label>
 
@@ -33,12 +33,11 @@ const Field = ({ label, required, error, children, delay = 0 }) => (
       {error && (
         <motion.p
           key={error}
-          className="font-mono font-normal text-[0.65rem] text-red-500 tracking-[0.1em] mt-1"
-          initial={{ opacity: 0, y: -4 }}
+          className="font-mono font-normal text-[0.58rem] text-red-500 tracking-[0.08em] mt-0.5 leading-none"
+          initial={{ opacity: 0, y: -3 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -4 }}
-          transition={{ duration: 0.2 }}
-        >
+          exit={{ opacity: 0, y: -3 }}
+          transition={{ duration: 0.15 }}>
           {error}
         </motion.p>
       )}
@@ -49,12 +48,12 @@ const Field = ({ label, required, error, children, delay = 0 }) => (
 // ── Base input classes ────────────────────────────────────
 const inputBase = (hasError) =>
   [
-    "w-full h-10 px-4 bg-transparent",
+    "w-full h-9 px-3.5 bg-transparent",
     "border border-[var(--border-col)] rounded-[2px]",
-    "text-[var(--text-primary)] font-sans font-normal text-[0.9rem]",
+    "text-[var(--text-primary)] font-sans font-normal text-[0.85rem]",
     "placeholder:text-[var(--text-muted)] placeholder:opacity-60",
     "outline-none transition-colors duration-200",
-    "focus:border-accent",
+    "focus:border-accent focus:shadow-[0_0_0_2px_rgba(26,63,212,0.12)]",
     "disabled:opacity-50 disabled:cursor-not-allowed",
     hasError ? "border-red-500" : "",
   ].join(" ");
@@ -127,14 +126,14 @@ const LoginPage = () => {
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-        className="mb-4"
+        className="mb-2"
       >
-        <p className="font-mono font-normal text-[0.65rem] uppercase tracking-[0.15em] text-[var(--text-muted)] mb-2">
+        <p className="font-mono font-normal text-[0.65rem] uppercase tracking-[0.15em] text-[var(--text-secondary)] mb-1">
           — Welcome back
         </p>
         <h2
           className="font-display font-semibold text-[var(--text-primary)] leading-[1.05] tracking-[-0.01em]"
-          style={{ fontSize: "clamp(2rem, 4vw, 3rem)" }}
+          style={{ fontSize: "clamp(1.6rem, 3.5vw, 2.4rem)" }}
         >
           Sign in to<br />your account.
         </h2>
@@ -150,7 +149,7 @@ const LoginPage = () => {
         <GoogleAuthButton onClick={handleGoogleLogin} disabled={isLoading} />
 
         {/* OR Divider */}
-        <div className="flex items-center gap-3 my-3">
+        <div className="flex items-center gap-3 my-2">
           <hr className="flex-1 border-t border-[var(--border-col)]" />
           <span className="font-mono text-[10px] uppercase tracking-widest text-[var(--text-muted)]">
             or
@@ -193,7 +192,7 @@ const LoginPage = () => {
       </AnimatePresence>
 
       {/* Form */}
-      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-3">
+      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-2">
         {/* Email */}
         <Field
           label="Email Address"
@@ -204,7 +203,7 @@ const LoginPage = () => {
           <div className="relative">
             <RiMailLine
               size={15}
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] pointer-events-none"
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] pointer-events-none"
             />
             <input
               id="login-email"
@@ -229,7 +228,7 @@ const LoginPage = () => {
           <div className="relative">
             <RiLockLine
               size={15}
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] pointer-events-none"
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] pointer-events-none"
             />
             <input
               id="login-password"
@@ -245,7 +244,7 @@ const LoginPage = () => {
               type="button"
               onClick={() => setShowPwd((v) => !v)}
               disabled={isLoading}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors duration-200 p-0 bg-transparent border-none cursor-pointer disabled:opacity-50"
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors duration-200 p-0 bg-transparent border-none cursor-pointer disabled:opacity-50"
               aria-label={showPwd ? "Hide password" : "Show password"}
             >
               {showPwd ? (
@@ -258,7 +257,7 @@ const LoginPage = () => {
         </Field>
 
         {/* Stripe divider */}
-        <div className="stripe-divider rounded-[1px] my-1" />
+        <div className="stripe-divider rounded-[1px] my-0.5" />
 
         {/* Submit */}
         <motion.button
@@ -266,13 +265,13 @@ const LoginPage = () => {
           type="submit"
           disabled={isLoading}
           className={[
-            "w-full h-10 bg-[var(--text-primary)] text-[var(--bg-card)]",
+            "w-full h-9 bg-accent text-[var(--accent-text)]",
             "font-mono font-medium text-[0.75rem] uppercase tracking-[0.15em]",
             "rounded-[2px] border-none cursor-pointer",
             "transition-all duration-200",
-            "hover:opacity-90 hover:-translate-y-px",
+            "hover:bg-accent-hover hover:-translate-y-px",
             "focus:outline-2 focus:outline-accent focus:outline-offset-2",
-            "active:translate-y-0 active:opacity-100",
+            "active:bg-[#081FA8] active:translate-y-0",
             "disabled:opacity-50 disabled:cursor-not-allowed disabled:translate-y-0",
           ].join(" ")}
           whileTap={isLoading ? {} : { scale: 0.985 }}

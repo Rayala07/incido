@@ -6,12 +6,12 @@ export const GoogleAuthButton = ({ onClick, disabled }) => {
       disabled={disabled}
       className={[
         'flex items-center justify-center w-full h-10',
-        'bg-white dark:bg-[var(--bg-card)]',
+        'bg-[var(--bg-card)]',
         'border border-[var(--border-col)]',
         'rounded-none cursor-pointer',
-        'text-[var(--text-primary)] font-mono text-[11px] uppercase tracking-widest font-medium',
+        'text-[var(--text-secondary)] font-mono text-[11px] uppercase tracking-widest font-medium',
         'transition-all duration-150',
-        'hover:bg-black/[0.03] dark:hover:bg-white/[0.05]',
+        'hover:bg-[var(--accent-subtle)]',
         'hover:border-accent',
         'focus:outline-2 focus:outline-accent focus:outline-offset-2',
         'active:translate-y-[1px]',
