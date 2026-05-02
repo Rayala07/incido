@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose from "mongoose"
 
 const incidentSchema = new mongoose.Schema(
   {
@@ -14,26 +14,26 @@ const incidentSchema = new mongoose.Schema(
 
     projectId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Project",
+      ref: "project",
       required: true,
     },
 
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: "user",
       required: true,
     },
 
     leader: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: "user",
       required: true,
     },
 
     members: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
+        ref: "user",
       },
     ],
 
@@ -73,12 +73,12 @@ const incidentSchema = new mongoose.Schema(
     aiSuggestions: [String],
   },
   { timestamps: true },
-);
+)
 
 // Indexes
-incidentSchema.index({ status: 1 });
-incidentSchema.index({ projectId: 1 });
+incidentSchema.index({ status: 1 })
+incidentSchema.index({ projectId: 1 })
 
-const incidentModel = mongoose.model("incident", incidentSchema);
+const incidentModel = mongoose.model("incident", incidentSchema)
 
-export default incidentModel;
+export default incidentModel

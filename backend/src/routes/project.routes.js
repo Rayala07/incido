@@ -1,24 +1,33 @@
-import express from "express";
-import { verifyUser, verifyAdmin } from "../middlewares/verifyuser.js";
+import express from "express"
+import { verifyUser, verifyAdmin } from "../middlewares/verifyuser.js"
 import {
   createProject,
   addMembersToProject,
   getAllProjects,
   getProjectById,
-  deleteProject,
-} from "../controllers/project.controller.js";
+} from "../controllers/project.controller.js"
+import {
+  projectValidator,
+  addProjectMembersValidator,
+} from "../validation/validate.js"
 
-const projectRoutes = express.Router();
+const projectRoutes = express.Router()
 
-projectRoutes.post("/create", verifyUser, verifyAdmin, createProject);
-projectRoutes.get("/getprojects", verifyUser, getAllProjects);
-projectRoutes.get("/:projectId", verifyUser, getProjectById);
-projectRoutes.delete("/:projectId", verifyUser, verifyAdmin, deleteProject);
+projectRoutes.post(
+  "/create",
+  verifyUser,
+  verifyAdmin,
+  projectValidator,
+  createProject,
+)
+projectRoutes.get("/getprojects", verifyUser, getAllProjects)
+projectRoutes.get("/:projectId", verifyUser, getProjectById)
 projectRoutes.post(
   "/add-members",
   verifyUser,
   verifyAdmin,
+  addProjectMembersValidator,
   addMembersToProject,
-);
+)
 
-export default projectRoutes;
+export default projectRoutes
