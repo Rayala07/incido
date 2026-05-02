@@ -1,15 +1,28 @@
-import express from "express";
-import { verifyUser, verifyAdmin } from "../middlewares/verifyuser.js";
+import express from "express"
+import { verifyUser } from "../middlewares/verifyuser.js"
 import {
   createIncident,
   getIncident,
   getAllIncidents,
-} from "../controllers/incident.controller.js";
+  closeIncident,
+  assignMembers,
+} from "../controllers/incident.controller.js"
+import {
+  incidentValidator,
+  assignMembersValidator,
+} from "../validation/validate.js"
 
-const incidentRoutes = express.Router();
+const incidentRoutes = express.Router()
 
-incidentRoutes.post("/create", verifyUser, verifyAdmin, createIncident);
-incidentRoutes.get("/allincidents", verifyUser, getAllIncidents);
-incidentRoutes.get("/:id", verifyUser, getIncident);
+incidentRoutes.post("/create", verifyUser, incidentValidator, createIncident)
+incidentRoutes.get("/allincidents", verifyUser, getAllIncidents)
+incidentRoutes.get("/:id", verifyUser, getIncident)
+incidentRoutes.patch("/:id/close", verifyUser, closeIncident)
+incidentRoutes.patch(
+  "/:id/assign-members",
+  verifyUser,
+  assignMembersValidator,
+  assignMembers,
+)
 
-export default incidentRoutes;
+export default incidentRoutes

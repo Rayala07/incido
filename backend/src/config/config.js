@@ -36,6 +36,11 @@ if (!process.env.EMAIL_REFRESH_TOKEN) {
     "EMAIL_REFRESH_TOKEN is not defined in environment variables",
   );
 }
+if(!process.env.GEMINI_API_KEY) {
+  throw new Error(
+    "GEMINI_API_KEY is not defined in environment variables",
+  );
+}
 
 export const config = {
   MONGO_URI: process.env.MONGO_URI,
@@ -49,4 +54,5 @@ export const config = {
   EMAIL_REFRESH_TOKEN: process.env.EMAIL_REFRESH_TOKEN,
   BASE_URL: process.env.BASE_URL || "http://localhost:3000",
   FRONTEND_URL: process.env.FRONTEND_URL || "http://localhost:5173",
+  GEMINI_API_KEY: process.env.GEMINI_API_KEY,
 };
