@@ -28,6 +28,7 @@ incidentRoutes.patch(
 )
 incidentRoutes.patch("/:id/close", verifyUser, closeIncident)
 incidentRoutes.delete("/:id", verifyUser, deleteIncident)
+incidentRoutes.patch("/:id/close", verifyUser, closeIncident)
 incidentRoutes.patch(
   "/:id/assign-members",
   verifyUser,
