@@ -39,6 +39,15 @@ if (!process.env.MISTRAL_API_KEY) {
 if (!process.env.PINECONE_API_KEY) {
   throw new Error("PINECONE_API_KEY is not defined in environment variables")
 }
+if(!process.env.REDIS_HOST) {
+  throw new Error("REDIS_HOST is not defined in environment variables")
+}
+if(!process.env.REDIS_PORT) {
+  throw new Error("REDIS_PORT is not defined in environment variables")
+}
+if(!process.env.REDIS_PASSWORD) {
+  throw new Error("REDIS_PASSWORD is not defined in environment variables")
+}
 
 export const config = {
   MONGO_URI: process.env.MONGO_URI,
@@ -56,4 +65,7 @@ export const config = {
   MISTRAL_API_KEY: process.env.MISTRAL_API_KEY,
   PINECONE_API_KEY: process.env.PINECONE_API_KEY,
   PINECONE_INDEX: process.env.PINECONE_INDEX,
+  REDIS_HOST: process.env.REDIS_HOST,
+  REDIS_PORT: process.env.REDIS_PORT,
+  REDIS_PASSWORD: process.env.REDIS_PASSWORD,
 }
