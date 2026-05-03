@@ -181,16 +181,35 @@ export const projectValidator = [
   validate,
 ]
 
+// ✅ Project Update Validation (both fields are optional for a PATCH-style update)
+export const updateProjectValidator = [
+  body("name")
+    .optional()
+    .trim()
+    .isLength({ min: 3, max: 100 })
+    .withMessage("Project name must be between 3 and 100 characters"),
+
+  body("description")
+    .optional()
+    .trim()
+    .isLength({ max: 1000 })
+    .withMessage("Description must not exceed 1000 characters"),
+
+  validate,
+]
+
 // ✅ Add Project Members Validation
 export const addProjectMembersValidator = [
   body("members")
     .isArray({ min: 1 })
     .withMessage("Members must be an array with at least one member"),
 
-  body("members.*.userId")
+  body("members.*.email")
     .trim()
     .notEmpty()
-    .withMessage("User ID is required for each member"),
+    .withMessage("Email is required for each member")
+    .isEmail()
+    .withMessage("Must be a valid email"),
 
   body("members.*.role")
     .isIn(["leader", "member"])

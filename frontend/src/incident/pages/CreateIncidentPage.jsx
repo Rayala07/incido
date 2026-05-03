@@ -1,31 +1,38 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import Navbar from "../../components/shared/Navbar";
 import SeveritySelector from "../components/SeveritySelector";
 import IncidentMemoryPanel from "../components/IncidentMemoryPanel";
-import { createIncidentSchema, emailSchema } from "../validation/incidentValidation";
+import { createIncidentSchema } from "../validation/incidentValidation";
+import incidentService from "../services/incidentService";
+import authService from "../../auth/services/authService";
 
 const CreateIncidentPage = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  // Silently capture project context passed via navigate(..., { state })
+  const projectId   = location.state?.projectId   ?? null;
+  const projectName = location.state?.projectName ?? null;
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [impactedService, setImpactedService] = useState("");
   const [severity, setSeverity] = useState("");
   
+  // responders — each entry: { email, username }
+  // Verification is done async on Enter/comma against the project membership endpoint.
   const [responders, setResponders] = useState([]);
   const [responderInput, setResponderInput] = useState("");
   const [responderError, setResponderError] = useState("");
+  const [isVerifyingResponder, setIsVerifyingResponder] = useState(false);
 
   const [formErrors, setFormErrors] = useState({});
+  const [apiError, setApiError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [scanStatus, setScanStatus] = useState("idle");
   const [scanResult, setScanResult] = useState(null);
   const debounceRef = useRef(null);
-
-  const mockResult = {
-    similarIncident: "Database timeout causing API failures — Q3 2024",
-    rootCause: "Connection pool exhaustion under high write load",
-    potentialFix: "Increase pool size to 50, add circuit breaker on DB writes",
-    actionItemStatus: "open",
-  };
 
   useEffect(() => {
     if (debounceRef.current) {
@@ -47,7 +54,12 @@ const CreateIncidentPage = () => {
 
         if (triggerFound) {
           setScanStatus("found");
-          setScanResult(mockResult);
+          setScanResult({
+            similarIncident: "Database timeout causing API failures — Q3 2024",
+            rootCause: "Connection pool exhaustion under high write load",
+            potentialFix: "Increase pool size to 50, add circuit breaker on DB writes",
+            actionItemStatus: "open",
+          });
         } else {
           setScanStatus("not-found");
           setScanResult(null);
@@ -58,51 +70,80 @@ const CreateIncidentPage = () => {
     return () => clearTimeout(debounceRef.current);
   }, [title, impactedService]);
 
-  const handleDevToggle = (status) => {
-    setScanStatus(status);
-    if (status === "found") {
-      setScanResult(mockResult);
-    } else {
-      setScanResult(null);
+  /**
+   * Async responder add.
+   * On Enter or comma: validate format, then call the backend to confirm the
+   * email belongs to a project member (any role). Only add to the list if valid.
+   */
+  const handleResponderKeyDown = async (e) => {
+    if (e.key !== "Enter" && e.key !== ",") return;
+    e.preventDefault();
+
+    const email = responderInput.trim().replace(",", "").toLowerCase();
+    if (!email) return;
+
+    // Basic format check first
+    const { emailSchema } = await import("../validation/incidentValidation");
+    const fmt = emailSchema.safeParse(email);
+    if (!fmt.success) {
+      setResponderError(fmt.error.issues[0].message);
+      return;
     }
-  };
 
-  const handleResponderKeyDown = (e) => {
-    if (e.key === "Enter" || e.key === ",") {
-      e.preventDefault();
-      const email = responderInput.trim().replace(",", "");
-      
-      if (!email) return;
+    if (responders.some((r) => r.email === email)) {
+      setResponderError("This email is already in the responders list.");
+      return;
+    }
 
-      const emailValidation = emailSchema.safeParse(email);
-      if (!emailValidation.success) {
-        setResponderError(emailValidation.error.issues[0].message);
-        return;
-      }
+    if (responders.length >= 5) {
+      setResponderError("Maximum 5 responders allowed.");
+      return;
+    }
 
-      setResponderError("");
-      if (responders.length < 5 && !responders.includes(email)) {
-        setResponders(prev => [...prev, email]);
+    if (!projectId) {
+      setResponderError("No project context — cannot verify membership.");
+      return;
+    }
+
+    setResponderError("");
+    setIsVerifyingResponder(true);
+
+    try {
+      const res = await authService.verifyResponderEmail(email, projectId);
+      if (res.success) {
+        setResponders((prev) => [
+          ...prev,
+          { email: res.user.email, username: res.user.username },
+        ]);
         setResponderInput("");
-      } else if (responders.includes(email)) {
-        setResponderError("Email already added");
       }
+    } catch (err) {
+      setResponderError(
+        err.response?.data?.message || "Failed to verify this email."
+      );
+    } finally {
+      setIsVerifyingResponder(false);
     }
   };
 
-  const removeResponder = (idx) => {
-    setResponders(responders.filter((_, i) => i !== idx));
+  const removeResponder = (email) => {
+    setResponders((prev) => prev.filter((r) => r.email !== email));
   };
 
-  const handleSubmit = (e) => {
+  /**
+   * Handle the form submission to create an incident.
+   */
+  const handleSubmit = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
+    setApiError("");
     
     const formData = {
       title,
       description,
       impactedService,
       severity,
-      responders
+      projectId,
+      responders: responders.map((r) => r.email),
     };
 
     const validationResult = createIncidentSchema.safeParse(formData);
@@ -116,10 +157,38 @@ const CreateIncidentPage = () => {
       return;
     }
 
+    if (!projectId) {
+      setApiError("Project Context Missing. Cannot create incident without a project ID.");
+      return;
+    }
+
     setFormErrors({});
     
-    // TODO: POST /api/incidents
-    console.log("Validated Form Data:", formData);
+    try {
+      setIsSubmitting(true);
+      const affectedServices = impactedService ? [impactedService] : [];
+      
+      const data = await incidentService.createIncident({
+        title,
+        description,
+        projectId,
+        severity: severity || undefined,
+        affectedServices,
+        // Send the verified responder emails for the backend to resolve
+        responderEmails: responders.map((r) => r.email),
+      });
+
+      if (data.success) {
+        navigate(`/projects/${projectId}`);
+      } else {
+        setApiError(data.message || "Failed to create incident.");
+      }
+    } catch (err) {
+      const errorMsg = err.response?.data?.message || "An unexpected error occurred.";
+      setApiError(errorMsg);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Helper to render field errors
@@ -138,25 +207,6 @@ const CreateIncidentPage = () => {
       
       <div className="h-[6px] bg-[var(--divider-stripe)] w-full shrink-0" />
 
-      {/* DEV TOGGLE STRIP */}
-      <div className="w-full bg-[var(--bg-card)] border-b border-[var(--border-col)] px-4 py-1.5 flex items-center shrink-0">
-        <span className="font-mono text-[9px] uppercase text-[var(--text-muted)] mr-3">
-          DEV / PANEL STATE:
-        </span>
-        <div className="flex gap-4 items-center">
-          {["idle", "loading", "found", "not-found"].map((status) => (
-            <button 
-              key={status}
-              type="button"
-              onClick={() => handleDevToggle(status)} 
-              className={`font-mono text-[9px] uppercase transition-colors duration-150 cursor-pointer ${scanStatus === status ? "text-[var(--accent)] underline underline-offset-2" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"}`}
-            >
-              {status.replace("-", " ")}
-            </button>
-          ))}
-        </div>
-      </div>
-
       {/* TWO-COLUMN AREA */}
       <div className="flex-1 overflow-hidden flex flex-row w-full h-full">
         
@@ -166,9 +216,29 @@ const CreateIncidentPage = () => {
           {/* SCROLLABLE FORM BODY */}
           <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden scrollbar-hide px-7 pt-6 pb-2 flex flex-col">
 
-            <h2 className="font-display font-bold text-xl text-[var(--text-primary)] tracking-[-0.01em] mb-5 shrink-0">
+            <h2 className="font-display font-bold text-xl text-[var(--text-primary)] tracking-[-0.01em] mb-1 shrink-0">
               Incident Details
             </h2>
+
+            {/* Project context badge — visible only when navigated from a project */}
+            {projectId && (
+              <div className="flex items-center gap-2 mb-5 shrink-0">
+                <span className="font-mono text-[0.58rem] uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                  Assigning to project:
+                </span>
+                <span className="font-mono text-[0.62rem] uppercase tracking-[0.1em] text-[var(--accent)] border border-[var(--accent)] bg-[var(--accent-subtle)] px-2 py-0.5 leading-none">
+                  {projectName ?? projectId}
+                </span>
+              </div>
+            )}
+            {!projectId && <div className="mb-5" />}
+
+            {/* Display API Errors */}
+            {apiError && (
+              <div className="w-full bg-[rgba(239,68,68,0.08)] border border-[#EF4444] px-3 py-2 mb-5 font-mono text-[0.65rem] text-[#EF4444] uppercase tracking-wider leading-relaxed">
+                {apiError}
+              </div>
+            )}
 
             {/* FIELD B: TITLE */}
             <div className="w-full mb-4 shrink-0">
@@ -250,38 +320,61 @@ const CreateIncidentPage = () => {
             <div className="w-full shrink-0">
               <div className="flex justify-between items-baseline mb-1.5">
                 <label className="block font-mono text-[0.6rem] uppercase tracking-widest text-[var(--text-secondary)]">
-                  ASSIGN RESPONDERS <span className="text-[#EF4444] ml-0.5">*</span>
+                  ASSIGN RESPONDERS
                 </label>
                 <span className="font-mono text-[0.55rem] text-[var(--text-muted)] opacity-60">
-                  Upto 5 only
+                  Project members only · up to 5
                 </span>
               </div>
               
-              <input
-                type="text"
-                value={responderInput}
-                onChange={(e) => {
-                  setResponderInput(e.target.value);
-                  if (responderError) setResponderError("");
-                }}
-                onKeyDown={handleResponderKeyDown}
-                placeholder={responders.length >= 5 ? "Maximum 5 responders reached" : "Enter email and press Enter or , to add"}
-                disabled={responders.length >= 5}
-                className={`w-full h-9 bg-[var(--bg-base)] border ${responderError ? "border-[#EF4444]" : "border-[var(--border-col)]"} rounded-none px-3 font-sans text-[0.85rem] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] placeholder:opacity-60 focus:outline-none focus:border-[var(--accent)] focus:shadow-[0_0_0_2px_rgba(26,63,212,0.12)] transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed`}
-              />
+              <div className="relative">
+                <input
+                  type="email"
+                  value={responderInput}
+                  onChange={(e) => {
+                    setResponderInput(e.target.value);
+                    if (responderError) setResponderError("");
+                  }}
+                  onKeyDown={handleResponderKeyDown}
+                  placeholder={
+                    responders.length >= 5
+                      ? "Maximum 5 responders reached"
+                      : isVerifyingResponder
+                      ? "Verifying..."
+                      : "Enter email and press Enter to add"
+                  }
+                  disabled={responders.length >= 5 || isVerifyingResponder}
+                  className={`w-full h-9 bg-[var(--bg-base)] border ${
+                    responderError ? "border-[#EF4444]" : "border-[var(--border-col)]"
+                  } rounded-none px-3 font-sans text-[0.85rem] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] placeholder:opacity-60 focus:outline-none focus:border-[var(--accent)] focus:shadow-[0_0_0_2px_rgba(26,63,212,0.12)] transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed`}
+                />
+                {isVerifyingResponder && (
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 font-mono text-[0.55rem] uppercase tracking-wider text-[var(--accent)]">
+                    Checking...
+                  </span>
+                )}
+              </div>
               <FieldError error={responderError} />
               <FieldError error={formErrors.responders} />
               
               {responders.length > 0 && (
                 <div className="flex flex-col gap-1 mt-2">
-                  {responders.map((r, i) => (
-                    <div key={i} className="flex items-center justify-between bg-[rgba(26,63,212,0.08)] border border-[rgba(26,63,212,0.22)] px-3 py-1.5 rounded-none">
-                      <span className="font-sans text-[0.75rem] text-[var(--text-secondary)]">
-                        {r}
-                      </span>
-                      <button 
-                        type="button" 
-                        onClick={() => removeResponder(i)} 
+                  {responders.map((r) => (
+                    <div
+                      key={r.email}
+                      className="flex items-center justify-between bg-[rgba(26,63,212,0.08)] border border-[rgba(26,63,212,0.22)] px-3 py-1.5 rounded-none"
+                    >
+                      <div className="flex flex-col">
+                        <span className="font-sans text-[0.75rem] font-medium text-[var(--text-primary)] leading-none mb-0.5">
+                          {r.username}
+                        </span>
+                        <span className="font-mono text-[0.58rem] text-[var(--text-muted)]">
+                          {r.email}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeResponder(r.email)}
                         className="font-mono text-[11px] text-[var(--text-muted)] hover:text-[#EF4444] transition-colors duration-150 cursor-pointer border-none bg-transparent pl-3"
                       >
                         ×
@@ -300,9 +393,10 @@ const CreateIncidentPage = () => {
             <div className="flex justify-end px-7 py-3">
               <button
                 onClick={handleSubmit}
-                className="h-9 bg-accent text-[var(--accent-text)] px-7 rounded-none cursor-pointer font-mono text-[0.72rem] uppercase tracking-[0.15em] font-medium border-none transition-all duration-200 hover:bg-[var(--accent-hover)] hover:-translate-y-px active:translate-y-0"
+                disabled={isSubmitting}
+                className="h-9 bg-accent text-[var(--accent-text)] px-7 rounded-none cursor-pointer font-mono text-[0.72rem] uppercase tracking-[0.15em] font-medium border-none transition-all duration-200 hover:bg-[var(--accent-hover)] hover:-translate-y-px active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
               >
-                CREATE INCIDENT
+                {isSubmitting ? "CREATING..." : "CREATE INCIDENT"}
               </button>
             </div>
           </div>

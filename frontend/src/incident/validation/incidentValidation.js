@@ -21,12 +21,12 @@ export const createIncidentSchema = z.object({
     .max(100, "Service name cannot exceed 100 characters")
     .nonempty("Impacted service is required"),
   
-  severity: z.enum(["sev1", "sev2", "sev3"], {
+  severity: z.enum(["low", "medium", "high", "critical"], {
     errorMap: () => ({ message: "Please select a valid severity level" })
   }),
   
   responders: z
     .array(z.string().email("Invalid email address"))
-    .min(1, "At least one responder is required")
-    .max(5, "Maximum 5 responders allowed"),
+    .max(5, "Maximum 5 responders allowed")
+    .optional(),
 });

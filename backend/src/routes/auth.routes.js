@@ -6,6 +6,8 @@ import {
   logout,
   register,
   verifyEmail,
+  verifyEmailForAssignment,
+  verifyResponderEmail,
   getMe,
 } from "../controllers/auth.controller.js";
 import { loginValidator, registerValidator } from "../validation/validate.js";
@@ -20,7 +22,8 @@ authRoutes.post("/register", registerValidator, register);
 authRoutes.post("/login", loginValidator, login);
 authRoutes.get("/logout", logout);
 authRoutes.get("/verify-email", verifyEmail);
-authRoutes.get("/users", verifyUser, getAllUsers);
+authRoutes.get("/verify-assignment-email/:email", verifyUser, verifyEmailForAssignment);
+authRoutes.get("/verify-responder-email", verifyUser, verifyResponderEmail);
 authRoutes.get("/me", verifyUser, getMe);
 
 // Google OAuth Register routes

@@ -20,20 +20,10 @@ const incidentRoutes = express.Router()
 incidentRoutes.post("/create", verifyUser, incidentValidator, createIncident)
 incidentRoutes.get("/allincidents", verifyUser, getAllIncidents)
 incidentRoutes.get("/:id", verifyUser, getIncident)
-incidentRoutes.patch(
-  "/:id",
-  verifyUser,
-  updateIncidentValidator,
-  updateIncident,
-)
 incidentRoutes.patch("/:id/close", verifyUser, closeIncident)
+incidentRoutes.patch("/:id/assign-members", verifyUser, assignMembersValidator, assignMembers)
+incidentRoutes.patch("/:id", verifyUser, updateIncidentValidator, updateIncident)
 incidentRoutes.delete("/:id", verifyUser, deleteIncident)
-incidentRoutes.patch("/:id/close", verifyUser, closeIncident)
-incidentRoutes.patch(
-  "/:id/assign-members",
-  verifyUser,
-  assignMembersValidator,
-  assignMembers,
-)
 
 export default incidentRoutes
+
