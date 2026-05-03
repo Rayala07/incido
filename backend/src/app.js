@@ -2,6 +2,7 @@ import "dotenv/config"
 import express from "express"
 import cookieParser from "cookie-parser"
 import session from "express-session"
+import MongoStore from "connect-mongo"
 import { connectDB } from "./config/database.js"
 import authRoutes from "./routes/auth.routes.js"
 import passport from "passport"
@@ -29,7 +30,15 @@ app.use(
     secret: process.env.SESSION_SECRET || "incident-rag-session-secret",
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 }, // 24 hours
+    store: MongoStore.create({
+      mongoUrl: process.env.MONGO_URI,
+      collectionName: "sessions",
+    }),
+    cookie: {
+      secure: process.env.NODE_ENV === "production", // Must be true for sameSite: 'none'
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // 'none' for cross-domain in prod
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    },
   }),
 )
 
