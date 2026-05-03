@@ -286,8 +286,8 @@ export const googleCallback = async (req, res) => {
 
   try {
     // Get role from session (set during /google route)
-    // If no role in session, default to 'member'
-    const userRole = req.session.userRole || "member"
+    // If no role in session (e.g. cookie dropped cross-domain), default to 'responder'
+    const userRole = req.session?.userRole || "responder"
 
     // Check if user already exists
     let user = await userModel.findOne({ email })
@@ -312,13 +312,13 @@ export const googleCallback = async (req, res) => {
     const token = generateToken(user)
     res.cookie("token", token)
 
-    // Redirect to frontend with token and role
-    // Frontend will use these to determine dashboard destination
-    const redirectUrl = `${FRONTEND_URL}/auth-success?token=${token}&role=${user.role}`
+    // Redirect to frontend dashboard directly. 
+    // The frontend's getMe() hook will detect the secure cookie and log the user in.
+    const redirectUrl = `${FRONTEND_URL}/dashboard`
     return res.redirect(redirectUrl)
   } catch (error) {
     console.error("Error during Google login:", error)
-    return res.redirect(`${FRONTEND_URL}/login?error=server_error`)
+    return res.redirect(`${config.FRONTEND_URL}/login?error=oauth_failed`)
   }
 }
 

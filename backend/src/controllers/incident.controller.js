@@ -205,7 +205,7 @@ export const createIncident = async (req, res) => {
 
 export const getIncident = async (req, res) => {
   try {
-    const { id: userId } = req.user
+    const { id: userId, role } = req.user
     const { id } = req.params
 
     if (!id) {
@@ -230,11 +230,20 @@ export const getIncident = async (req, res) => {
     }
 
     const userIdString = userId.toString()
+
+    // 🕵️ Check project membership for authorization
+    const project = await projectModel.findById(incident.projectId).select("members")
+    const isProjectMember = project?.members.some(
+      (m) => m.user.toString() === userIdString
+    )
+
     const isAuthorized =
+      role === "admin" ||
       incident.isPublic ||
       incident.createdBy?.toString() === userIdString ||
       incident.leader?.toString() === userIdString ||
-      incident.members.some((member) => member.toString() === userIdString)
+      incident.members.some((member) => member.toString() === userIdString) ||
+      isProjectMember
 
     if (!isAuthorized) {
       return res.status(403).json({
@@ -258,17 +267,34 @@ export const getIncident = async (req, res) => {
 
 export const getAllIncidents = async (req, res) => {
   try {
-    const { id: userId } = req.user
+    const { id: userId, role } = req.user
 
-    const incidents = await incidentModel
-      .find({
+    let query
+
+    if (role === "admin") {
+      // Admins can see all incidents in the system
+      query = {}
+    } else {
+      // For responders/members:
+      // 1. Incidents they are directly involved in (creator, leader, member)
+      // 2. Public incidents
+      // 3. All incidents in projects they are members of
+      const userProjects = await projectModel.find({ "members.user": userId }).select("_id")
+      const projectIds = userProjects.map((p) => p._id)
+
+      query = {
         $or: [
           { createdBy: userId },
           { leader: userId },
           { members: userId },
           { isPublic: true },
+          { projectId: { $in: projectIds } },
         ],
-      })
+      }
+    }
+
+    const incidents = await incidentModel
+      .find(query)
       .populate("projectId", "name description")
       .populate("createdBy", "username email")
       .populate("leader", "username email")

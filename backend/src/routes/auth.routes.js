@@ -30,8 +30,13 @@ authRoutes.get("/me", verifyUser, getMe);
 // Google OAuth - Initiate login with role parameter
 // Frontend calls: /api/auth/google?role=admin or /api/auth/google?role=member
 authRoutes.get("/google", (req, res, next) => {
-  // Extract role from query params (default to 'member' if not provided)
-  const role = req.query.role || "member"
+  // Extract role from query params (default to 'responder' if not provided)
+  let role = req.query.role || "responder"
+
+  // Sanitize the role to prevent injection vulnerabilities
+  if (role !== "admin" && role !== "responder") {
+    role = "responder"
+  }
 
   // Store role in session so we can access it in the callback
   // This survives the redirect to Google and back

@@ -1,14 +1,14 @@
 import { useEffect } from "react";
 import { RouterProvider } from "react-router-dom";
 import { Provider, useDispatch } from "react-redux";
-import store from "../store/store";
-import { router } from "../routes.jsx";
+import store from "./store";
+import { router } from "./router";
 import "./app.css";
-import authService from "../auth/services/authService";
+import authService from "../features/auth/services/authService";
 import {
   authSuccess,
   sessionResolved,
-} from "../auth/store/authSlice";
+} from "../features/auth/store/authSlice";
 
 /**
  * AppBootstrap — lives inside <Provider> so it can use Redux hooks.
