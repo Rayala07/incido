@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
-import { Link, useSearchParams } from "react-router-dom";
-import { motion, AnimatePresence } from "motion/react";
+import { useState, useEffect } from "react"
+import { Link, useSearchParams } from "react-router-dom"
+import { motion, AnimatePresence } from "motion/react"
 import {
   RiEyeLine,
   RiEyeOffLine,
@@ -8,9 +8,12 @@ import {
   RiLockLine,
   RiAlertLine,
   RiCheckLine,
-} from "@remixicon/react";
-import { GoogleAuthButton } from "../components/GoogleAuthButton";
-import useAuth from "../hooks/useAuth";
+} from "@remixicon/react"
+import { GoogleAuthButton } from "../components/GoogleAuthButton"
+import useAuth from "../hooks/useAuth"
+
+const backendBaseUrl =
+  import.meta.env.VITE_BACKEND_URL || "http://localhost:3000"
 
 // ── Reusable field wrapper ────────────────────────────────
 const Field = ({ label, required, error, children, delay = 0 }) => (
@@ -37,13 +40,14 @@ const Field = ({ label, required, error, children, delay = 0 }) => (
           initial={{ opacity: 0, y: -3 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -3 }}
-          transition={{ duration: 0.15 }}>
+          transition={{ duration: 0.15 }}
+        >
           {error}
         </motion.p>
       )}
     </AnimatePresence>
   </motion.div>
-);
+)
 
 // ── Base input classes ────────────────────────────────────
 const inputBase = (hasError) =>
@@ -56,69 +60,74 @@ const inputBase = (hasError) =>
     "focus:border-accent focus:shadow-[0_0_0_2px_rgba(26,63,212,0.12)]",
     "disabled:opacity-50 disabled:cursor-not-allowed",
     hasError ? "border-red-500" : "",
-  ].join(" ");
+  ].join(" ")
 
 // ── LoginPage ─────────────────────────────────────────────
 const LoginPage = () => {
-  const { login, isLoading, error, dismissError } = useAuth();
+  const { login, isLoading, error, dismissError } = useAuth()
 
-  const [form, setForm]       = useState({ email: "", password: "" });
-  const [localErrors, setLocalErrors] = useState({});
-  const [showPwd, setShowPwd] = useState(false);
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [form, setForm] = useState({ email: "", password: "" })
+  const [localErrors, setLocalErrors] = useState({})
+  const [showPwd, setShowPwd] = useState(false)
+  const [searchParams, setSearchParams] = useSearchParams()
 
-  const isVerified = searchParams.get("verified") === "true";
-  const urlError = searchParams.get("error");
+  const isVerified = searchParams.get("verified") === "true"
+  const urlError = searchParams.get("error")
 
   // Map URL errors to human-readable text
-  const urlErrorMessage = urlError === "missing_email" ? "Verification link is invalid." 
-    : urlError === "user_not_found" ? "User not found for this verification link." 
-    : urlError === "server_error" ? "Server error during verification. Please try again." 
-    : urlError === "oauth_failed" ? "Google authentication failed. Please try again." : null;
+  const urlErrorMessage =
+    urlError === "missing_email"
+      ? "Verification link is invalid."
+      : urlError === "user_not_found"
+        ? "User not found for this verification link."
+        : urlError === "server_error"
+          ? "Server error during verification. Please try again."
+          : urlError === "oauth_failed"
+            ? "Google authentication failed. Please try again."
+            : null
 
   // Clear API-level error when user starts typing again
   useEffect(() => {
-    if (error) dismissError();
+    if (error) dismissError()
     if (urlError) {
-      searchParams.delete("error");
-      setSearchParams(searchParams);
+      searchParams.delete("error")
+      setSearchParams(searchParams)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.email, form.password]);
+  }, [form.email, form.password])
 
-  const set = (key) => (e) =>
-    setForm((f) => ({ ...f, [key]: e.target.value }));
+  const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }))
 
   // Client-side validation mirrors the backend loginValidator
   const validate = () => {
-    const errs = {};
-    if (!form.email)
-      errs.email = "Email is required";
-    else if (!/^[a-zA-Z0-9._%-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(form.email))
-      errs.email = "Enter a valid email address";
-    if (!form.password)
-      errs.password = "Password is required";
+    const errs = {}
+    if (!form.email) errs.email = "Email is required"
+    else if (
+      !/^[a-zA-Z0-9._%-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(form.email)
+    )
+      errs.email = "Enter a valid email address"
+    if (!form.password) errs.password = "Password is required"
     else if (form.password.length < 8)
-      errs.password = "Password must be at least 8 characters";
-    return errs;
-  };
+      errs.password = "Password must be at least 8 characters"
+    return errs
+  }
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    const errs = validate();
+    e.preventDefault()
+    const errs = validate()
     if (Object.keys(errs).length) {
-      setLocalErrors(errs);
-      return;
+      setLocalErrors(errs)
+      return
     }
-    setLocalErrors({});
-    await login({ email: form.email, password: form.password });
+    setLocalErrors({})
+    await login({ email: form.email, password: form.password })
     // useAuth.login handles redirect on success and sets error on failure
-  };
+  }
 
   const handleGoogleLogin = () => {
     // Redirect to backend Google OAuth — response comes back via cookie
-    window.location.href = `${import.meta.env.VITE_BACKEND_URL}/api/auth/google`;
-  };
+    window.location.href = `${backendBaseUrl}/api/auth/google`
+  }
 
   return (
     <>
@@ -136,7 +145,9 @@ const LoginPage = () => {
           className="font-display font-semibold text-[var(--text-primary)] leading-[1.05] tracking-[-0.01em]"
           style={{ fontSize: "clamp(1.6rem, 3.5vw, 2.4rem)" }}
         >
-          Sign in to<br />your account.
+          Sign in to
+          <br />
+          your account.
         </h2>
       </motion.div>
 
@@ -248,11 +259,7 @@ const LoginPage = () => {
               className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors duration-200 p-0 bg-transparent border-none cursor-pointer disabled:opacity-50"
               aria-label={showPwd ? "Hide password" : "Show password"}
             >
-              {showPwd ? (
-                <RiEyeOffLine size={16} />
-              ) : (
-                <RiEyeLine size={16} />
-              )}
+              {showPwd ? <RiEyeOffLine size={16} /> : <RiEyeLine size={16} />}
             </button>
           </div>
         </Field>
@@ -297,7 +304,7 @@ const LoginPage = () => {
         </motion.p>
       </form>
     </>
-  );
-};
+  )
+}
 
-export default LoginPage;
+export default LoginPage

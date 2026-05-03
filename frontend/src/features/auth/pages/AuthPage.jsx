@@ -3,6 +3,9 @@ import GoogleAuthButton from "../components/GoogleAuthButton.jsx"
 import AuthLayout from "../components/AuthLayout.jsx"
 import "../styles/auth.css"
 
+const backendBaseUrl =
+  import.meta.env.VITE_BACKEND_URL || "http://localhost:3000"
+
 /**
  * AuthPage Component
  *
@@ -53,7 +56,7 @@ export default function AuthPage() {
   const handleGoogleLogin = () => {
     // Build the auth URL with the selected role as query param
     // Backend's /api/auth/google route will extract this
-    const authUrl = `${import.meta.env.VITE_API_BASE_URL}/api/auth/google?role=${role}`
+    const authUrl = `${backendBaseUrl}/api/auth/google?role=${role}`
     window.location.href = authUrl
   }
 

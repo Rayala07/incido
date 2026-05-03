@@ -1,6 +1,6 @@
-import { useState, useMemo, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { motion, AnimatePresence } from "motion/react";
+import { useState, useMemo, useEffect } from "react"
+import { Link } from "react-router-dom"
+import { motion, AnimatePresence } from "motion/react"
 import {
   RiEyeLine,
   RiEyeOffLine,
@@ -10,36 +10,39 @@ import {
   RiShieldLine,
   RiAlertLine,
   RiMailCheckLine,
-} from "@remixicon/react";
-import { GoogleAuthButton } from "../components/GoogleAuthButton";
-import useAuth from "../hooks/useAuth";
+} from "@remixicon/react"
+import { GoogleAuthButton } from "../components/GoogleAuthButton"
+import useAuth from "../hooks/useAuth"
+
+const backendBaseUrl =
+  import.meta.env.VITE_BACKEND_URL || "http://localhost:3000"
 
 // ── Password strength logic ───────────────────────────────
 const calcStrength = (pwd) => {
-  if (!pwd) return 0;
-  let score = 0;
-  if (pwd.length >= 8)                             score++;
-  if (pwd.length >= 12)                            score++;
-  if (/[A-Z]/.test(pwd) && /[a-z]/.test(pwd))     score++;
-  if (/[0-9]/.test(pwd))                           score++;
-  if (/[^a-zA-Z0-9]/.test(pwd))                   score++;
-  return score; // 0–5
-};
+  if (!pwd) return 0
+  let score = 0
+  if (pwd.length >= 8) score++
+  if (pwd.length >= 12) score++
+  if (/[A-Z]/.test(pwd) && /[a-z]/.test(pwd)) score++
+  if (/[0-9]/.test(pwd)) score++
+  if (/[^a-zA-Z0-9]/.test(pwd)) score++
+  return score // 0–5
+}
 
 const STRENGTH_META = [
   { label: "Too short", color: "#EF4444" },
-  { label: "Weak",      color: "#F97316" },
-  { label: "Fair",      color: "#EAB308" },
-  { label: "Strong",    color: "#00C2D4" },
-  { label: "Strong",    color: "#00C2D4" },
-  { label: "Strong",    color: "#00C2D4" },
-];
+  { label: "Weak", color: "#F97316" },
+  { label: "Fair", color: "#EAB308" },
+  { label: "Strong", color: "#00C2D4" },
+  { label: "Strong", color: "#00C2D4" },
+  { label: "Strong", color: "#00C2D4" },
+]
 
 const StrengthBar = ({ password }) => {
-  const score = useMemo(() => calcStrength(password), [password]);
-  const meta  = STRENGTH_META[score];
+  const score = useMemo(() => calcStrength(password), [password])
+  const meta = STRENGTH_META[score]
 
-  if (!password) return null;
+  if (!password) return null
 
   return (
     <motion.div
@@ -67,8 +70,8 @@ const StrengthBar = ({ password }) => {
         {meta.label}
       </p>
     </motion.div>
-  );
-};
+  )
+}
 
 // ── Reusable field wrapper ────────────────────────────────
 const Field = ({ label, required, error, hint, children, delay = 0 }) => (
@@ -101,13 +104,14 @@ const Field = ({ label, required, error, hint, children, delay = 0 }) => (
           initial={{ opacity: 0, y: -3 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -3 }}
-          transition={{ duration: 0.15 }}>
+          transition={{ duration: 0.15 }}
+        >
           {error}
         </motion.p>
       )}
     </AnimatePresence>
   </motion.div>
-);
+)
 
 // ── Base input classes ────────────────────────────────────
 const inputBase = (hasError) =>
@@ -120,7 +124,7 @@ const inputBase = (hasError) =>
     "focus:border-accent focus:shadow-[0_0_0_2px_rgba(26,63,212,0.12)]",
     "disabled:opacity-50 disabled:cursor-not-allowed",
     hasError ? "border-red-500" : "",
-  ].join(" ");
+  ].join(" ")
 
 // ── Section separator ─────────────────────────────────────
 const SectionLabel = ({ children, delay = 0 }) => (
@@ -134,7 +138,7 @@ const SectionLabel = ({ children, delay = 0 }) => (
     {children}
     <span className="opacity-50">—</span>
   </motion.div>
-);
+)
 
 // ── Post-registration success screen ─────────────────────
 const SuccessScreen = ({ email }) => (
@@ -155,7 +159,8 @@ const SuccessScreen = ({ email }) => (
         Check your inbox.
       </h3>
       <p className="font-mono text-[0.65rem] uppercase tracking-[0.1em] text-[var(--text-muted)] mt-3 leading-[1.8]">
-        A verification link has been sent to<br />
+        A verification link has been sent to
+        <br />
         <span className="text-[var(--text-primary)]">{email}</span>.<br />
         Click it to activate your account.
       </p>
@@ -171,86 +176,84 @@ const SuccessScreen = ({ email }) => (
       </Link>
     </p>
   </motion.div>
-);
+)
 
 // ── RegisterPage ──────────────────────────────────────────
 const RegisterPage = () => {
-  const { register, isLoading, error, dismissError } = useAuth();
+  const { register, isLoading, error, dismissError } = useAuth()
 
   const [form, setForm] = useState({
     username: "",
-    email:    "",
+    email: "",
     password: "",
-    role:     "responder",
-  });
-  const [localErrors, setLocalErrors] = useState({});
-  const [showPwd, setShowPwd]         = useState(false);
-  const [registered, setRegistered]   = useState(false); // flip to show success screen
+    role: "responder",
+  })
+  const [localErrors, setLocalErrors] = useState({})
+  const [showPwd, setShowPwd] = useState(false)
+  const [registered, setRegistered] = useState(false) // flip to show success screen
 
   // Clear API-level error when user edits any field
   useEffect(() => {
-    if (error) dismissError();
+    if (error) dismissError()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.username, form.email, form.password]);
+  }, [form.username, form.email, form.password])
 
-  const set = (key) => (e) =>
-    setForm((f) => ({ ...f, [key]: e.target.value }));
+  const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }))
 
   // Client-side validation mirrors backend registerValidator
   const validate = () => {
-    const errs = {};
-    if (!form.username)
-      errs.username = "Username is required";
+    const errs = {}
+    if (!form.username) errs.username = "Username is required"
     else if (form.username.trim().length < 3)
-      errs.username = "Username must be at least 3 characters";
+      errs.username = "Username must be at least 3 characters"
 
-    if (!form.email)
-      errs.email = "Email is required";
-    else if (!/^[a-zA-Z0-9._%-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(form.email))
-      errs.email = "Enter a valid email address";
+    if (!form.email) errs.email = "Email is required"
+    else if (
+      !/^[a-zA-Z0-9._%-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(form.email)
+    )
+      errs.email = "Enter a valid email address"
 
-    if (!form.password)
-      errs.password = "Password is required";
+    if (!form.password) errs.password = "Password is required"
     else if (form.password.length < 8)
-      errs.password = "Password must be at least 8 characters";
+      errs.password = "Password must be at least 8 characters"
     else if (!/[A-Z]/.test(form.password))
-      errs.password = "Password must contain at least one uppercase letter";
+      errs.password = "Password must contain at least one uppercase letter"
     else if (!/[a-z]/.test(form.password))
-      errs.password = "Password must contain at least one lowercase letter";
+      errs.password = "Password must contain at least one lowercase letter"
     else if (!/\d/.test(form.password))
-      errs.password = "Password must contain at least one number";
+      errs.password = "Password must contain at least one number"
     else if (!/[!@#$%^&*(),.?":{}|<>]/.test(form.password))
-      errs.password = "Password must contain at least one special character";
+      errs.password = "Password must contain at least one special character"
 
-    return errs;
-  };
+    return errs
+  }
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    const errs = validate();
+    e.preventDefault()
+    const errs = validate()
     if (Object.keys(errs).length) {
-      setLocalErrors(errs);
-      return;
+      setLocalErrors(errs)
+      return
     }
-    setLocalErrors({});
+    setLocalErrors({})
     const result = await register({
       username: form.username,
-      email:    form.email,
+      email: form.email,
       password: form.password,
-      role:     form.role,
-    });
+      role: form.role,
+    })
     if (result.success) {
-      setRegistered(true);
+      setRegistered(true)
     }
-  };
+  }
 
   const handleGoogleLogin = () => {
-    window.location.href = `${import.meta.env.VITE_BACKEND_URL}/api/auth/google?role=${form.role}`;
-  };
+    window.location.href = `${backendBaseUrl}/api/auth/google?role=${form.role}`
+  }
 
   // ── Success screen ──────────────────────────────────────
   if (registered) {
-    return <SuccessScreen email={form.email} />;
+    return <SuccessScreen email={form.email} />
   }
 
   return (
@@ -269,7 +272,9 @@ const RegisterPage = () => {
           className="font-display font-semibold text-[var(--text-primary)] leading-[1.05] tracking-[-0.01em]"
           style={{ fontSize: "clamp(1.6rem, 3.5vw, 2.4rem)" }}
         >
-          Join Incido.<br />Start responding.
+          Join Incido.
+          <br />
+          Start responding.
         </h2>
       </motion.div>
 
@@ -311,7 +316,11 @@ const RegisterPage = () => {
       </AnimatePresence>
 
       {/* Form */}
-      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-1.5">
+      <form
+        onSubmit={handleSubmit}
+        noValidate
+        className="flex flex-col gap-1.5"
+      >
         {/* ── Section: Account Info ──────────────────────── */}
         <SectionLabel delay={0.06}>Account Info</SectionLabel>
 
@@ -474,7 +483,7 @@ const RegisterPage = () => {
         </motion.p>
       </form>
     </>
-  );
-};
+  )
+}
 
-export default RegisterPage;
+export default RegisterPage
