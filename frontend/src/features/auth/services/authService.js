@@ -56,7 +56,13 @@ const verifyResponderEmail = async (email, projectId) => {
   return data;
 };
 
-const authService = { login, register, logout, getMe, verifyAssignmentEmail, verifyResponderEmail };
+// GET /api/auth/users
+const getAllUsers = async () => {
+  const { data } = await axiosInstance.get("/api/auth/users");
+  return data;
+};
+
+const authService = { login, register, logout, getMe, verifyAssignmentEmail, verifyResponderEmail, getAllUsers };
 
 export default authService;
 
