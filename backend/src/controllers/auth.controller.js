@@ -1,29 +1,29 @@
-import jwt from "jsonwebtoken";
-import userModel from "../models/user.model.js";
-import { config } from "../config/config.js";
-import { sendVerificationEmail } from "../services/mail.service.js";
+import jwt from "jsonwebtoken"
+import userModel from "../models/user.model.js"
+import { config } from "../config/config.js"
+import { sendVerificationEmail } from "../services/mail.service.js"
 
 //generat tokens function
 const generateToken = (user) => {
   return jwt.sign({ id: user._id, role: user.role }, config.JWT_SECRET, {
     expiresIn: "1h",
-  });
-};
+  })
+}
 
 // register user
 // route: POST /api/auth/register
 export const register = async (req, res) => {
-  const { username, email, password, role } = req.body;
+  const { username, email, password, role } = req.body
 
   try {
     // Check if user already exists
     const existingUser = await userModel.findOne({
       $or: [{ email }, { username }],
-    });
+    })
     if (existingUser) {
       return res
         .status(400)
-        .json({ message: "User already exists", success: false });
+        .json({ message: "User already exists", success: false })
     }
 
     // Create new user with isVerified set to false
@@ -34,19 +34,19 @@ export const register = async (req, res) => {
       role,
       isVerified: false,
       profile: `${config.BASE_URL}/assets/no_profile.jpg`,
-    });
+    })
 
     // Send verification email
     try {
-      await sendVerificationEmail(email, username);
+      await sendVerificationEmail(email, username)
     } catch (emailError) {
-      console.error("Failed to send verification email:", emailError);
-      await userModel.deleteOne({ _id: user._id });
+      console.error("Failed to send verification email:", emailError)
+      await userModel.deleteOne({ _id: user._id })
       return res.status(500).json({
         message:
           "Failed to send verification email. Please try registering again.",
         success: false,
-      });
+      })
     }
 
     res.status(201).json({
@@ -60,35 +60,35 @@ export const register = async (req, res) => {
         role: user.role,
         isVerified: user.isVerified,
       },
-    });
+    })
   } catch (error) {
-    console.error("Error during registration:", error);
-    res.status(500).json({ message: "Server error" });
+    console.error("Error during registration:", error)
+    res.status(500).json({ message: "Server error" })
   }
-};
+}
 
 // login
 // route: POST /api/auth/login
 
 export const login = async (req, res) => {
-  const { email, password, username } = req.body;
+  const { email, password, username } = req.body
 
   try {
     const user = await userModel
       .findOne({
         $or: [{ email }, { username }],
       })
-      .select("+password");
+      .select("+password")
     if (!user) {
       return res
         .status(400)
-        .json({ message: "Invalid credentials", success: false });
+        .json({ message: "Invalid credentials", success: false })
     }
-    const isMatch = await user.comparePassword(password);
+    const isMatch = await user.comparePassword(password)
     if (!isMatch) {
       return res
         .status(400)
-        .json({ message: "Invalid credentials", success: false });
+        .json({ message: "Invalid credentials", success: false })
     }
 
     // Check if user is verified
@@ -97,11 +97,11 @@ export const login = async (req, res) => {
         message: "Please verify your email before logging in",
         success: false,
         isVerified: false,
-      });
+      })
     }
 
-    const token = generateToken(user);
-    res.cookie("token", token);
+    const token = generateToken(user)
+    res.cookie("token", token)
     res.json({
       message: "Login successful",
       user: {
@@ -113,22 +113,22 @@ export const login = async (req, res) => {
         role: user.role,
         isVerified: user.isVerified,
       },
-    });
+    })
   } catch (error) {
-    console.error("Error during login:", error);
-    res.status(500).json({ message: "Server error" });
+    console.error("Error during login:", error)
+    res.status(500).json({ message: "Server error" })
   }
-};
+}
 
 // Verify email
 // route: GET /api/auth/verify-email?email=user@example.com
 export const verifyEmail = async (req, res) => {
-  const { email } = req.query;
-  const FRONTEND_URL = config.FRONTEND_URL;
+  const { email } = req.query
+  const FRONTEND_URL = config.FRONTEND_URL
 
   try {
     if (!email) {
-      return res.redirect(`${FRONTEND_URL}/login?error=missing_email`);
+      return res.redirect(`${FRONTEND_URL}/login?error=missing_email`)
     }
 
     // Find user by email and set isVerified to true
@@ -136,33 +136,33 @@ export const verifyEmail = async (req, res) => {
       { email },
       { isVerified: true },
       { new: true },
-    );
+    )
 
     if (!user) {
-      return res.redirect(`${FRONTEND_URL}/login?error=user_not_found`);
+      return res.redirect(`${FRONTEND_URL}/login?error=user_not_found`)
     }
 
-    return res.redirect(`${FRONTEND_URL}/login?verified=true`);
+    return res.redirect(`${FRONTEND_URL}/login?verified=true`)
   } catch (error) {
-    console.error("Error during email verification:", error);
-    return res.redirect(`${FRONTEND_URL}/login?error=server_error`);
+    console.error("Error during email verification:", error)
+    return res.redirect(`${FRONTEND_URL}/login?error=server_error`)
   }
-};
+}
 
 // logout
 // route: POST /api/auth/logout
 export const logout = (req, res) => {
-  res.clearCookie("token");
-  res.status(200).json({ message: "Logout successful", success: true });
-};
+  res.clearCookie("token")
+  res.status(200).json({ message: "Logout successful", success: true })
+}
 
 // get current user
 // route: GET /api/auth/me
 export const getMe = async (req, res) => {
   try {
-    const user = await userModel.findById(req.user.id).select("-password");
+    const user = await userModel.findById(req.user.id).select("-password")
     if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
+      return res.status(404).json({ success: false, message: "User not found" })
     }
     res.status(200).json({
       success: true,
@@ -176,12 +176,12 @@ export const getMe = async (req, res) => {
         isVerified: user.isVerified,
         createdAt: user.createdAt,
       },
-    });
+    })
   } catch (error) {
-    console.error("Error in getMe:", error);
-    res.status(500).json({ success: false, message: "Server error" });
+    console.error("Error in getMe:", error)
+    res.status(500).json({ success: false, message: "Server error" })
   }
-};
+}
 
 export const verifyEmailForAssignment = async (req, res) => {
   try {
@@ -279,40 +279,55 @@ export const verifyResponderEmail = async (req, res) => {
 };
 
 export const googleCallback = async (req, res) => {
-  const FRONTEND_URL = config.FRONTEND_URL;
-  const { emails, id, displayName, photos } = req.user;
-  const email = emails[0].value;
-  const profilePic = photos[0].value;
-  
+  const FRONTEND_URL = config.FRONTEND_URL
+  const { emails, id, displayName, photos } = req.user
+  const email = emails[0].value
+  const profilePic = photos[0].value
+
   try {
-    let user = await userModel.findOne({ email });
-    
+    // Get role from session (set during /google route)
+    // If no role in session, default to 'member'
+    const userRole = req.session.userRole || "member"
+
+    // Check if user already exists
+    let user = await userModel.findOne({ email })
+
     if (!user) {
+      // New user - create with the role from session
       user = await userModel.create({
         username: displayName,
         email,
         profile: profilePic,
         googleId: id,
         usertype: "google",
+        role: userRole, // Assign role from invite/selection
         isVerified: true,
-      });
+      })
+      console.log(`✓ New user created: ${email} with role: ${userRole}`)
+    } else {
+      console.log(`✓ Existing user logged in: ${email} (role: ${user.role})`)
     }
-    
-    const token = generateToken(user);
-    res.cookie("token", token);
-    return res.redirect(`${FRONTEND_URL}/dashboard`);
+
+    // Generate JWT token (includes user ID and role)
+    const token = generateToken(user)
+    res.cookie("token", token)
+
+    // Redirect to frontend with token and role
+    // Frontend will use these to determine dashboard destination
+    const redirectUrl = `${FRONTEND_URL}/auth-success?token=${token}&role=${user.role}`
+    return res.redirect(redirectUrl)
   } catch (error) {
-    console.error("Error during Google login:", error);
-    return res.redirect(`${FRONTEND_URL}/login?error=server_error`);
+    console.error("Error during Google login:", error)
+    return res.redirect(`${FRONTEND_URL}/login?error=server_error`)
   }
-};
+}
 
 export const getAllUsers = async (req, res) => {
   try {
-    const users = await userModel.find().select("-password");
-    res.status(200).json({ success: true, users });
+    const users = await userModel.find().select("-password")
+    res.status(200).json({ success: true, users })
   } catch (error) {
-    console.error("Error fetching users:", error);
-    res.status(500).json({ success: false, message: "Server error" });
+    console.error("Error fetching users:", error)
+    res.status(500).json({ success: false, message: "Server error" })
   }
-};
+}
