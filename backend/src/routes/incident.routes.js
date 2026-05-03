@@ -2,6 +2,8 @@ import express from "express"
 import { verifyUser } from "../middlewares/verifyuser.js"
 import {
   createIncident,
+  getRagStatus,
+  searchSimilarIncidents,
   getIncident,
   getAllIncidents,
   closeIncident,
@@ -19,6 +21,8 @@ const incidentRoutes = express.Router()
 
 incidentRoutes.post("/create", verifyUser, incidentValidator, createIncident)
 incidentRoutes.get("/allincidents", verifyUser, getAllIncidents)
+incidentRoutes.get("/search", verifyUser, searchSimilarIncidents)
+incidentRoutes.get("/rag/status", verifyUser, getRagStatus)
 incidentRoutes.get("/:id", verifyUser, getIncident)
 incidentRoutes.patch(
   "/:id",

@@ -2,9 +2,50 @@ import incidentModel from "../models/incident.model.js"
 import projectModel from "../models/project.model.js"
 import incidentDetailsModel from "../models/incidentDetails.model.js"
 import userModel from "../models/user.model.js"
-import { generatePostmortem, getSeverity } from "../services/ai.service.js"
+import {
+  generatePostmortem,
+  getSeverity,
+  explainSimilarity,
+  extractSuggestedFixes,
+  extractInsight,
+} from "../services/ai.service.js"
+import {
+  deleteIncidentRecord,
+  getRagStatusReport,
+  upsertIncidentRecord,
+  findSimilarIncidents,
+  applyTimeDecay,
+  detectRecurrence,
+} from "../services/rag.service.js"
 
 const VALID_SEVERITIES = ["low", "medium", "high", "critical"]
+
+// Helper: Map numeric similarity score to human-readable label
+const getSimilarityLabel = (score) => {
+  if (score >= 0.9) return "Very Similar"
+  if (score >= 0.8) return "Similar"
+  if (score >= 0.75) return "Somewhat Similar"
+  return "Related"
+}
+
+// Helper: Calculate confidence based on match count and average score
+const calculateConfidence = (matches) => {
+  if (matches.length === 0) return "none"
+  const avgScore = matches.reduce((sum, m) => sum + m.score, 0) / matches.length
+  if (avgScore >= 0.85) return "high"
+  if (avgScore >= 0.75) return "medium"
+  return "low"
+}
+
+// Helper: Timeout promise race for AI calls (avoid hanging)
+const withTimeout = (promise, timeoutMs = 800) => {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("Timeout")), timeoutMs),
+    ),
+  ])
+}
 
 // Role enforcement summary:
 // - createIncident: admin OR project leader
@@ -106,9 +147,21 @@ export const createIncident = async (req, res) => {
         : [],
     })
 
+    let pineconeSynced = true
+    try {
+      await upsertIncidentRecord(incident)
+    } catch (pineconeError) {
+      pineconeSynced = false
+      console.error(
+        "[RAG] Failed to upsert incident to Pinecone:",
+        pineconeError,
+      )
+    }
+
     return res.status(201).json({
       success: true,
       message: "Incident created successfully",
+      pineconeSynced,
       incident,
     })
   } catch (error) {
@@ -321,6 +374,15 @@ export const assignMembers = async (req, res) => {
     incident.members = uniqueMembers
     await incident.save()
 
+    try {
+      await upsertIncidentRecord(incident)
+    } catch (pineconeError) {
+      console.error(
+        "[RAG] Failed to update incident in Pinecone:",
+        pineconeError,
+      )
+    }
+
     const updated = await incidentModel
       .findById(id)
       .populate("projectId", "name description")
@@ -444,6 +506,15 @@ export const deleteIncident = async (req, res) => {
     await incidentDetailsModel.deleteMany({ incidentId: incident._id })
     await incident.deleteOne()
 
+    try {
+      await deleteIncidentRecord(id)
+    } catch (pineconeError) {
+      console.error(
+        "[RAG] Failed to delete incident from Pinecone:",
+        pineconeError,
+      )
+    }
+
     return res.status(200).json({
       success: true,
       message: "Incident deleted successfully",
@@ -453,5 +524,167 @@ export const deleteIncident = async (req, res) => {
     return res
       .status(500)
       .json({ success: false, message: "Internal server error" })
+  }
+}
+
+export const getRagStatus = async (req, res) => {
+  try {
+    const status = await getRagStatusReport()
+
+    return res.status(200).json({
+      success: true,
+      message: "RAG status fetched successfully",
+      status,
+    })
+  } catch (error) {
+    console.error("Error fetching RAG status:", error)
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    })
+  }
+}
+
+export const searchSimilarIncidents = async (req, res) => {
+  try {
+    const { q } = req.query
+
+    if (!q || !q.toString().trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Search query is required",
+      })
+    }
+
+    const searchQuery = q.toString().trim()
+
+    let similarMatches = []
+    try {
+      similarMatches = await findSimilarIncidents(searchQuery, 0.75)
+    } catch (ragError) {
+      console.error("Error querying RAG:", ragError)
+      return res.status(200).json({
+        success: true,
+        query: searchQuery,
+        matchCount: 0,
+        results: [],
+        confidence: "none",
+        isNewPattern: true,
+        message: "No similar incidents found—this appears to be a new issue",
+      })
+    }
+
+    // Apply time decay - recent incidents weighted higher
+    const decayedMatches = applyTimeDecay(similarMatches)
+
+    // Detect if this is a recurring issue
+    const recurrenceInfo = detectRecurrence(decayedMatches, 3)
+
+    // Handle empty state (no matches)
+    if (decayedMatches.length === 0) {
+      console.log(`[RAG] New pattern detected: "${searchQuery}"`)
+      return res.status(200).json({
+        success: true,
+        query: searchQuery,
+        matchCount: 0,
+        results: [],
+        confidence: "none",
+        isNewPattern: true,
+        message: "No similar incidents found—you're facing a new issue 🚀",
+        cta: "Document this incident to help future teams",
+      })
+    }
+
+    const incidentIds = decayedMatches
+      .map((match) => match?.metadata?.incidentId)
+      .filter(Boolean)
+
+    let incidents = []
+    if (incidentIds.length > 0) {
+      incidents = await incidentModel
+        .find({ _id: { $in: incidentIds } })
+        .populate("projectId", "name")
+        .select(
+          "_id title description severity status projectId createdAt postmortem",
+        )
+        .sort({ createdAt: -1 })
+    }
+
+    // Extract suggested fixes from similar incidents
+    const suggestedFixes = extractSuggestedFixes(incidents)
+
+    // Extract insight pattern (wow moment)
+    const insight = extractInsight(incidents, decayedMatches)
+
+    // Build enriched results with explanations ONLY for top 2
+    const enrichedResults = await Promise.all(
+      incidents.map(async (incident, idx) => {
+        const match = decayedMatches[idx]
+        const score = (match?.score || 0).toFixed(2)
+        const label = getSimilarityLabel(score)
+
+        // Only explain top 2 results (performance optimization + timeout protection)
+        let reason = label
+        if (idx < 2) {
+          try {
+            reason = await withTimeout(
+              explainSimilarity(searchQuery, incident.title),
+              800,
+            )
+          } catch (explainError) {
+            console.warn(
+              "Could not generate explanation:",
+              explainError.message,
+            )
+            reason = label
+          }
+        }
+
+        return {
+          incidentId: incident._id,
+          title: incident.title,
+          severity: incident.severity,
+          status: incident.status,
+          projectName: incident.projectId?.name || "",
+          similarity: parseFloat(score),
+          similarityLabel: label,
+          reason: reason,
+          createdAt: incident.createdAt,
+        }
+      }),
+    )
+
+    // Calculate overall confidence
+    const confidence = calculateConfidence(decayedMatches)
+
+    // Demo logging
+    console.log(
+      `[RAG] matches=${enrichedResults.length}, confidence=${confidence}, recurring=${recurrenceInfo.isRecurring}`,
+    )
+
+    return res.status(200).json({
+      success: true,
+      query: searchQuery,
+      matchCount: enrichedResults.length,
+      confidence,
+      recurring: recurrenceInfo.isRecurring,
+      recurringMessage: recurrenceInfo.isRecurring
+        ? `Detected ${recurrenceInfo.count} similar incidents`
+        : null,
+      insight,
+      suggestedFixes,
+      isNewPattern: false,
+      cta:
+        enrichedResults.length > 0
+          ? "Reuse fixes from similar incidents"
+          : null,
+      results: enrichedResults,
+    })
+  } catch (error) {
+    console.error("Error searching similar incidents:", error)
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    })
   }
 }
