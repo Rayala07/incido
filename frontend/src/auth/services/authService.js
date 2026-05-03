@@ -41,6 +41,22 @@ const getMe = async () => {
   return data; // { success, user }
 };
 
-const authService = { login, register, logout, getMe };
+// GET /api/auth/verify-assignment-email/:email
+const verifyAssignmentEmail = async (email) => {
+  const { data } = await axiosInstance.get(`/api/auth/verify-assignment-email/${encodeURIComponent(email)}`);
+  return data;
+};
+
+// GET /api/auth/verify-responder-email/:email?projectId=<id>
+// Checks: user exists + not admin + is a member of the given project
+const verifyResponderEmail = async (email, projectId) => {
+  const { data } = await axiosInstance.get(
+    `/api/auth/verify-responder-email?email=${encodeURIComponent(email)}&projectId=${projectId}`
+  );
+  return data;
+};
+
+const authService = { login, register, logout, getMe, verifyAssignmentEmail, verifyResponderEmail };
 
 export default authService;
+

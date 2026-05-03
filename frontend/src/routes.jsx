@@ -12,6 +12,7 @@ import AuthLayout    from "./auth/components/AuthLayout";
 import DashboardPage from "./dashboard/pages/DashboardPage";
 import CreateIncidentPage from "./incident/pages/CreateIncidentPage";
 import ProjectsPage from "./project/pages/ProjectsPage";
+import ProjectDetailsPage from "./project/pages/ProjectDetailsPage";
 
 // ── ProtectedRoute ─────────────────────────────────────────
 // Blocks unauthenticated users. Waits for session check to
@@ -66,6 +67,7 @@ export const router = createBrowserRouter([
     children: [
       { path: "/dashboard", element: <DashboardPage /> },
       { path: "/projects", element: <ProjectsPage /> },
+      { path: "/projects/:projectId", element: <ProjectDetailsPage /> },
       { path: "/incidents/create", element: <CreateIncidentPage /> },
     ],
   },

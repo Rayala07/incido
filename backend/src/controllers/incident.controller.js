@@ -64,6 +64,7 @@ export const createIncident = async (req, res) => {
       isPublic,
       affectedUsers,
       affectedServices,
+      responderEmails,   // optional — string[]
     } = req.body
 
     if (!title || !title.toString().trim()) {
@@ -122,6 +123,34 @@ export const createIncident = async (req, res) => {
     const leaderToSet =
       role === "admin" ? projectLeaderUserId || userId : userId
 
+    // ── Resolve responder emails → user ObjectIds ───────────────────────────
+    // Only users who are actually project members can be responders.
+    // The creator is always included (already the leader/member on the incident).
+    let responderIds = []
+
+    if (Array.isArray(responderEmails) && responderEmails.length > 0) {
+      // Build a lookup of project member user-IDs for O(1) membership checks
+      const projectMemberIdSet = new Set(
+        project.members.map((m) => m.user.toString())
+      )
+
+      // Resolve emails in one batched query
+      const resolvedUsers = await userModel
+        .find({ email: { $in: responderEmails.map((e) => e.toLowerCase()) } })
+        .select("_id email role")
+
+      responderIds = resolvedUsers
+        .filter(
+          (u) =>
+            u.role !== "admin" &&             // no admins
+            projectMemberIdSet.has(u._id.toString()) // must be a project member
+        )
+        .map((u) => u._id.toString())
+    }
+
+    // Always seed members with the creator so they can see their own incident
+    const seedMembers = [...new Set([userId, ...responderIds])]
+
     const aiResult = await generatePostmortem(
       title.toString().trim(),
       description.toString().trim(),
@@ -135,7 +164,7 @@ export const createIncident = async (req, res) => {
       projectId,
       createdBy: userId,
       leader: leaderToSet,
-      members: [userId],
+      members: seedMembers,
       severity: inferredSeverity,
       severitySource: severity ? "manual" : "ai",
       isPublic: Boolean(isPublic),
@@ -172,6 +201,7 @@ export const createIncident = async (req, res) => {
     })
   }
 }
+
 
 export const getIncident = async (req, res) => {
   try {

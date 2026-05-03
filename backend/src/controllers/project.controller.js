@@ -54,10 +54,18 @@ export const createProject = async (req, res) => {
 
 export const getAllProjects = async (req, res) => {
   try {
+    const { id, role } = req.user;
+
+    // Filter: Admins see everything. Others see only projects they belong to.
+    let query = {};
+    if (role !== "admin") {
+      query = { "members.user": id };
+    }
+
     const projects = await projectModel
-      .find()
-      .populate("createdBy", "name email")
-      .populate("members.user", "name email")
+      .find(query)
+      .populate("createdBy", "username email profile")
+      .populate("members.user", "username email profile")
       .sort({ createdAt: -1 });
 
     return res.status(200).json({
@@ -103,17 +111,17 @@ export const addMembersToProject = async (req, res) => {
       });
     }
 
-    // 🧹 Remove duplicates (keep last occurrence)
+    // 🧹 Remove duplicates (keep last occurrence by email)
     const uniqueMembers = [
-      ...new Map(members.map((m) => [m.userId, m])).values(),
+      ...new Map(members.map((m) => [m.email?.toLowerCase(), m])).values(),
     ];
 
-    // ✅ Validate each member
+    // ✅ Validate roles
     for (let member of uniqueMembers) {
-      if (!member.userId || !mongoose.Types.ObjectId.isValid(member.userId)) {
+      if (!member.email) {
         return res.status(400).json({
           success: false,
-          message: "Each member must have a valid userId",
+          message: "Each member must have a valid email",
         });
       }
 
@@ -123,30 +131,43 @@ export const addMembersToProject = async (req, res) => {
           message: "Role must be either 'leader' or 'member'",
         });
       }
-
-      // Optional rule (skip instead of blocking)
-      if (member.userId === id) continue;
     }
 
-    // 👤 Check users exist
-    const userIds = uniqueMembers.map((m) => m.userId);
+    // 👤 Check users exist by email efficiently (Indexing)
+    const emails = uniqueMembers.map((m) => m.email.toLowerCase());
 
     const existingUsers = await userModel.find({
-      _id: { $in: userIds },
+      email: { $in: emails },
     });
 
-    const existingUserIds = existingUsers.map((u) => u._id.toString());
+    const existingEmails = existingUsers.map((u) => u.email.toLowerCase());
 
-    const invalidUserIds = userIds.filter(
-      (uid) => !existingUserIds.includes(uid),
-    );
+    const invalidEmails = emails.filter((e) => !existingEmails.includes(e));
 
-    if (invalidUserIds.length > 0) {
+    if (invalidEmails.length > 0) {
       return res.status(400).json({
         success: false,
-        message: `Invalid user IDs: ${invalidUserIds.join(", ")}`,
+        message: `These emails do not exist in the system: ${invalidEmails.join(", ")}`,
       });
     }
+
+    // 🛑 Block Admins from being assigned
+    const adminUsers = existingUsers.filter((u) => u.role === "admin");
+    if (adminUsers.length > 0) {
+      const adminEmails = adminUsers.map((u) => u.email);
+      return res.status(400).json({
+        success: false,
+        message: `Cannot assign system Admins to projects. Invalid emails: ${adminEmails.join(", ")}`,
+      });
+    }
+
+    // Map emails to User IDs for further processing
+    const userMapByEmail = new Map(existingUsers.map((u) => [u.email.toLowerCase(), u._id.toString()]));
+    
+    const mappedMembers = uniqueMembers.map((m) => ({
+      userId: userMapByEmail.get(m.email.toLowerCase()),
+      role: m.role
+    }));
 
     // 📁 Get project
     const project = await projectModel.findById(projectId);
@@ -161,11 +182,11 @@ export const addMembersToProject = async (req, res) => {
     // 👑 Leader validation (FIXED — no double count)
     const currentLeaders = project.members.filter((m) => m.role === "leader");
 
-    const incomingLeaders = uniqueMembers.filter((m) => m.role === "leader");
+    const incomingLeaders = mappedMembers.filter((m) => m.role === "leader");
 
     const filteredCurrentLeaders = currentLeaders.filter(
       (existing) =>
-        !uniqueMembers.some((m) => m.userId === existing.user.toString()),
+        !mappedMembers.some((m) => m.userId === existing.user.toString()),
     );
 
     const leaderCount = filteredCurrentLeaders.length + incomingLeaders.length;
@@ -182,8 +203,8 @@ export const addMembersToProject = async (req, res) => {
       project.members.map((m) => [m.user.toString(), m]),
     );
 
-    for (let member of uniqueMembers) {
-      // skip self if needed
+    for (let member of mappedMembers) {
+      // skip self if needed (admins shouldn't be added anyway, but just in case)
       if (member.userId === id) continue;
 
       if (!memberMap.has(member.userId)) {
@@ -202,8 +223,8 @@ export const addMembersToProject = async (req, res) => {
     // 🔄 Populate updated project
     const updatedProject = await projectModel
       .findById(projectId)
-      .populate("createdBy", "name email")
-      .populate("members.user", "name email");
+      .populate("createdBy", "username email profile")
+      .populate("members.user", "username email profile");
 
     return res.status(200).json({
       success: true,
@@ -232,8 +253,8 @@ export const getProjectById = async (req, res) => {
 
     const project = await projectModel
       .findById(projectId)
-      .populate("createdBy", "name email")
-      .populate("members.user", "name email");
+      .populate("createdBy", "username email profile")
+      .populate("members.user", "username email profile");
 
     if (!project) {
       return res.status(404).json({
@@ -276,8 +297,8 @@ export const updateProject = async (req, res) => {
 
     const project = await projectModel
       .findById(projectId)
-      .populate("createdBy", "name email")
-      .populate("members.user", "name email");
+      .populate("createdBy", "username email profile")
+      .populate("members.user", "username email profile");
     if (!project) {
       return res.status(404).json({
         success: false,
@@ -346,13 +367,91 @@ export const deleteProject = async (req, res) => {
         message: "Project not found",
       });
     }
-    await project.remove();
+
+    /* Use findByIdAndDelete — project.remove() is deprecated in Mongoose 7+ */
+    await projectModel.findByIdAndDelete(projectId);
+
     return res.status(200).json({
       success: true,
       message: "Project deleted successfully",
     });
   } catch (error) {
     console.error("Error deleting project:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+/**
+ * Remove a single member from a project. Admin-only.
+ * The userId is taken from the URL param, so no body parsing needed.
+ * After removal the updated project is re-populated and returned so the
+ * frontend can update its state without a separate GET call.
+ */
+export const removeProjectMember = async (req, res) => {
+  try {
+    const { role } = req.user;
+    const { projectId, userId } = req.params;
+
+    // Only admins may remove members
+    if (role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Only admins can remove project members",
+      });
+    }
+
+    // Validate both IDs before hitting the database
+    if (
+      !mongoose.Types.ObjectId.isValid(projectId) ||
+      !mongoose.Types.ObjectId.isValid(userId)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid project or user ID",
+      });
+    }
+
+    const project = await projectModel.findById(projectId);
+
+    if (!project) {
+      return res.status(404).json({
+        success: false,
+        message: "Project not found",
+      });
+    }
+
+    // Find the member inside the embedded array
+    const memberIndex = project.members.findIndex(
+      (m) => m.user.toString() === userId
+    );
+
+    if (memberIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: "User is not a member of this project",
+      });
+    }
+
+    // Remove the member in-place and persist
+    project.members.splice(memberIndex, 1);
+    await project.save();
+
+    // Return the fully populated updated project
+    const updatedProject = await projectModel
+      .findById(projectId)
+      .populate("createdBy", "username email profile")
+      .populate("members.user", "username email profile");
+
+    return res.status(200).json({
+      success: true,
+      message: "Member removed successfully",
+      project: updatedProject,
+    });
+  } catch (error) {
+    console.error("Error removing project member:", error);
     return res.status(500).json({
       success: false,
       message: "Internal server error",

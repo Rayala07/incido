@@ -1,6 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { RiSunLine, RiMoonLine } from "@remixicon/react";
+import useAuth from "../../auth/hook/useAuth";
 
 const LogoBox = () => (
   <div className="inline-flex items-center justify-center w-20 h-8 border border-dashed border-[var(--border-col)] rounded-[2px] shrink-0">
@@ -12,6 +13,7 @@ const LogoBox = () => (
 
 const Navbar = () => {
   const { pathname } = useLocation();
+  const { isAdmin } = useAuth();
   const [isDark, setIsDark] = useState(false);
 
   // Initialize theme from localStorage or document class

@@ -183,6 +183,101 @@ export const getMe = async (req, res) => {
   }
 }
 
+export const verifyEmailForAssignment = async (req, res) => {
+  try {
+    const { email } = req.params;
+    if (!email) {
+      return res.status(400).json({ success: false, message: "Email is required" });
+    }
+
+    const user = await userModel.findOne({ email: email.toLowerCase() });
+    
+    if (!user) {
+      return res.status(404).json({ success: false, message: "Email does not exist in the system" });
+    }
+
+    if (user.role === "admin") {
+      return res.status(400).json({ success: false, message: "Admins cannot be assigned to projects" });
+    }
+
+    return res.status(200).json({
+      success: true,
+      user: {
+        email: user.email,
+        username: user.username,
+      }
+    });
+  } catch (error) {
+    console.error("Error verifying email:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
+/**
+ * Verify that an email belongs to a user who is a member of a specific project.
+ * Used by the Create Incident form to validate responder assignments.
+ *
+ * The caller can assign themselves even if they are the leader — no role gate,
+ * only project membership is checked.
+ *
+ * Query: GET /api/auth/verify-responder-email/:email?projectId=<id>
+ */
+export const verifyResponderEmail = async (req, res) => {
+  try {
+    const { email, projectId } = req.query;
+
+    if (!email) {
+      return res.status(400).json({ success: false, message: "Email is required" });
+    }
+    if (!projectId) {
+      return res.status(400).json({ success: false, message: "projectId is required" });
+    }
+
+    // Single indexed lookup — O(log N)
+    const user = await userModel.findOne({ email: email.toLowerCase() }).select("_id username email role");
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "No user found with this email" });
+    }
+
+    if (user.role === "admin") {
+      return res.status(400).json({ success: false, message: "Admins cannot be assigned as responders" });
+    }
+
+    // Import project model inline to avoid circular dependency at module level
+    const projectModel = (await import("../models/project.model.js")).default;
+
+    const project = await projectModel.findById(projectId).select("members");
+    if (!project) {
+      return res.status(404).json({ success: false, message: "Project not found" });
+    }
+
+    // Check if this user is a member (any role — member or leader) of the project
+    const isMember = project.members.some(
+      (m) => m.user.toString() === user._id.toString()
+    );
+
+    if (!isMember) {
+      return res.status(400).json({
+        success: false,
+        message: "This user is not a member of the project",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      user: {
+        _id: user._id,
+        email: user.email,
+        username: user.username,
+      },
+    });
+  } catch (error) {
+    console.error("Error verifying responder email:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
 export const googleCallback = async (req, res) => {
   const FRONTEND_URL = config.FRONTEND_URL
   const { emails, id, displayName, photos } = req.user

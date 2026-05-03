@@ -1,12 +1,15 @@
 import React, { useState, useEffect, useRef } from "react";
 import { animate } from "motion";
 import { createProjectSchema } from "../validation/projectValidation";
+import projectService from "../services/projectService";
 
 const CreateProjectModal = ({ isOpen, onClose, onCreate }) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [errors, setErrors] = useState({});
+  const [apiError, setApiError] = useState("");
   const [isAnimatingOut, setIsAnimatingOut] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const modalRef = useRef(null);
   const backdropRef = useRef(null);
@@ -80,17 +83,24 @@ const CreateProjectModal = ({ isOpen, onClose, onCreate }) => {
       await Promise.all(animPromises);
     }
 
-    // Reset state
+    // Reset state back to default
     setTitle("");
     setDescription("");
     setErrors({});
+    setApiError("");
     setIsAnimatingOut(false);
     onClose();
   };
 
+  /**
+   * Handle the form submission.
+   * First validates the inputs locally using Zod, then sends the data to the backend API.
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setApiError("");
     
+    // 1. Validate form fields locally
     const result = createProjectSchema.safeParse({ title, description });
     
     if (!result.success) {
@@ -103,14 +113,29 @@ const CreateProjectModal = ({ isOpen, onClose, onCreate }) => {
       return;
     }
 
-    // Validated successfully
-    onCreate({
-      title: title.trim(),
-      description: description.trim(),
-      status: "Active"
-    });
-    
-    await handleClose();
+    // 2. Call the backend API to create the project
+    try {
+      setIsSubmitting(true);
+      const data = await projectService.createProject({
+        name: title.trim(),
+        description: description.trim(),
+      });
+
+      if (data.success) {
+        // 3. If successful, notify the parent component and close the modal
+        onCreate(data.project);
+        await handleClose();
+      } else {
+        // Backend returned an error (e.g., project already exists)
+        setApiError(data.message || "Failed to create project.");
+      }
+    } catch (err) {
+      // 4. Handle unexpected errors (e.g., network issues, 403 Forbidden)
+      const errorMsg = err.response?.data?.message || "An error occurred while creating the project.";
+      setApiError(errorMsg);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Handle Escape key
@@ -183,6 +208,14 @@ const CreateProjectModal = ({ isOpen, onClose, onCreate }) => {
 
         {/* Body */}
         <div className="px-6 py-6 flex flex-col gap-5">
+          
+          {/* Display API-level errors (like 403 Forbidden) */}
+          {apiError && (
+            <div className="w-full bg-[rgba(239,68,68,0.08)] border border-[#EF4444] px-3 py-2 font-mono text-[0.65rem] text-[#EF4444] uppercase tracking-wider leading-relaxed">
+              {apiError}
+            </div>
+          )}
+
           {/* Title Field */}
           <div className="w-full shrink-0">
             <label className="block mb-1.5 font-mono text-[0.6rem] uppercase tracking-widest text-[var(--text-secondary)]">
@@ -245,9 +278,10 @@ const CreateProjectModal = ({ isOpen, onClose, onCreate }) => {
             type="button"
             ref={lastFocusableRef}
             onClick={handleSubmit}
-            className="h-9 px-6 bg-accent text-[var(--accent-text)] font-mono text-[0.72rem] font-medium uppercase tracking-[0.15em] border-none rounded-none cursor-pointer transition-all duration-200 hover:bg-[var(--accent-hover)] hover:-translate-y-px active:translate-y-0"
+            disabled={isSubmitting}
+            className="h-9 px-6 bg-accent text-[var(--accent-text)] font-mono text-[0.72rem] font-medium uppercase tracking-[0.15em] border-none rounded-none cursor-pointer transition-all duration-200 hover:bg-[var(--accent-hover)] hover:-translate-y-px active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
           >
-            Create
+            {isSubmitting ? "Creating..." : "Create"}
           </button>
         </div>
       </div>

@@ -1,46 +1,10 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { animate } from 'motion';
+import useAuth from "../../auth/hook/useAuth";
+import projectService from '../services/projectService';
 import Navbar from "../../components/shared/Navbar";
 import CreateProjectModal from "../components/CreateProjectModal";
-
-const initialProjects = [
-  {
-    id: 1,
-    title: "Apollo Dashboard",
-    description: "A real-time analytics dashboard built for monitoring satellite telemetry data streams across multiple missions.",
-    status: "Active",
-  },
-  {
-    id: 2,
-    title: "Nebula Design System",
-    description: "A comprehensive component library and design token system used across all internal products.",
-    status: "In Progress",
-  },
-  {
-    id: 3,
-    title: "Orbit API Gateway",
-    description: "Centralised API gateway handling authentication, rate limiting, and routing for microservices.",
-    status: "Completed",
-  },
-  {
-    id: 4,
-    title: "Pulsar Notifications",
-    description: "A cross-platform push notification service supporting web, iOS, and Android delivery pipelines.",
-    status: "Active",
-  },
-  {
-    id: 5,
-    title: "Vega Auth Service",
-    description: "OAuth 2.0 and SSO implementation with support for multi-tenant organisations and role-based access.",
-    status: "In Progress",
-  },
-  {
-    id: 6,
-    title: "Comet File Storage",
-    description: "Distributed object storage service with CDN integration, versioning, and automated backup policies.",
-    status: "Completed",
-  },
-];
 
 const truncateDescription = (desc) => {
   const words = desc.split(' ');
@@ -48,7 +12,7 @@ const truncateDescription = (desc) => {
   return words.slice(0, 8).join(' ') + '...';
 };
 
-const ProjectCard = ({ project }) => {
+const ProjectCard = ({ project, onClick }) => {
   const cardRef = useRef(null);
 
   const handleMouseMove = (e) => {
@@ -95,10 +59,11 @@ const ProjectCard = ({ project }) => {
         onMouseLeave={handleMouseLeave}
         className="group bg-[var(--bg-card)] border border-[var(--border-col)] hover:border-[var(--accent)] hover:shadow-[0_0_0_1px_var(--accent)] p-7 rounded-none flex flex-col h-full cursor-pointer transform-gpu will-change-transform transition-colors duration-300"
         style={{ transformStyle: "preserve-3d" }}
+        onClick={onClick}
       >
         <div className="mb-5">
           <h3 className="font-display font-bold text-xl text-[var(--text-primary)] group-hover:text-[var(--accent)] tracking-tight transition-colors duration-300">
-            {project.title}
+            {project.name}
           </h3>
         </div>
         <p className="font-sans text-[0.85rem] text-[var(--text-muted)] leading-relaxed flex-1 whitespace-pre-wrap">
@@ -110,12 +75,43 @@ const ProjectCard = ({ project }) => {
 };
 
 const ProjectsPage = () => {
-  const [projects, setProjects] = useState(initialProjects);
+  const navigate = useNavigate();
+  const { isAdmin } = useAuth();
+  const [projects, setProjects] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  /**
+   * Fetch all projects when the page loads.
+   */
+  const fetchProjects = async () => {
+    try {
+      setIsLoading(true);
+      setError("");
+      const data = await projectService.getAllProjects();
+      if (data.success) {
+        setProjects(data.projects || []);
+      } else {
+        setError(data.message || "Failed to load projects.");
+      }
+    } catch (err) {
+      setError("An error occurred while fetching projects.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProjects();
+  }, []);
+
+  /**
+   * Handle the newly created project from the modal.
+   * We prepend it to the state so it shows up instantly without reloading.
+   */
   const handleCreateProject = (newProject) => {
-    const newId = projects.length > 0 ? Math.max(...projects.map(p => p.id)) + 1 : 1;
-    setProjects([{ id: newId, ...newProject }, ...projects]);
+    setProjects([newProject, ...projects]);
   };
 
   return (
@@ -130,20 +126,53 @@ const ProjectsPage = () => {
             <h1 className="font-display font-bold text-3xl md:text-4xl text-[var(--text-primary)] tracking-tight">
               Projects
             </h1>
-            <button 
-              onClick={() => setIsModalOpen(true)}
-              className="h-9 px-6 bg-accent text-[var(--accent-text)] font-mono text-[0.72rem] font-medium uppercase tracking-[0.15em] border-none rounded-none cursor-pointer transition-all duration-200 hover:bg-[var(--accent-hover)] hover:-translate-y-px active:translate-y-0"
-            >
-              + Create Project
-            </button>
+            {isAdmin && (
+              <button 
+                onClick={() => setIsModalOpen(true)}
+                className="h-9 px-6 bg-accent text-[var(--accent-text)] font-mono text-[0.72rem] font-medium uppercase tracking-[0.15em] border-none rounded-none cursor-pointer transition-all duration-200 hover:bg-[var(--accent-hover)] hover:-translate-y-px active:translate-y-0"
+              >
+                + Create Project
+              </button>
+            )}
           </div>
 
-          {/* Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {projects.map(project => (
-              <ProjectCard key={project.id} project={project} />
-            ))}
-          </div>
+          {/* Error Message */}
+          {error && (
+            <div className="w-full bg-[rgba(239,68,68,0.08)] border border-[#EF4444] px-4 py-3 font-mono text-[0.7rem] text-[#EF4444] uppercase tracking-wider">
+              {error}
+            </div>
+          )}
+
+          {/* Grid / Loading / Empty State */}
+          {isLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="bg-[var(--bg-card)] border border-[var(--border-col)] p-7 h-48 animate-pulse flex flex-col justify-between">
+                  <div className="w-3/4 h-6 bg-[var(--border-col)]" />
+                  <div className="w-full h-16 bg-[var(--border-col)] opacity-50" />
+                </div>
+              ))}
+            </div>
+          ) : projects.length === 0 ? (
+            <div className="w-full py-20 flex flex-col items-center justify-center border border-dashed border-[var(--border-col)]">
+              <span className="font-mono text-[0.75rem] uppercase tracking-widest text-[var(--text-muted)] mb-2">
+                No Projects Found
+              </span>
+              <p className="font-sans text-[0.85rem] text-[var(--text-secondary)] text-center max-w-sm">
+                You don't have any projects yet. Click the "+ Create Project" button to get started.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {projects.map(project => (
+                <ProjectCard
+                  key={project._id}
+                  project={project}
+                  onClick={() => navigate(`/projects/${project._id}`)}
+                />
+              ))}
+            </div>
+          )}
 
         </div>
       </main>
