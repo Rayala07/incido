@@ -1,4 +1,6 @@
 import "dotenv/config"
+// Initialize Redis client early so connection logs appear in server startup
+import "./config/redis.js"
 import express from "express"
 import helmet from "helmet"
 import cookieParser from "cookie-parser"
@@ -19,6 +21,10 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 const app = express()
+// Trust proxy when running behind a reverse proxy (nginx/load balancer)
+if (process.env.NODE_ENV === "production") {
+  app.set("trust proxy", 1)
+}
 
 connectDB()
 app.use(morgan("dev"))
@@ -66,6 +72,11 @@ app.use(
 
 // static assets
 app.use("/assets", express.static(path.join(__dirname, "assets")))
+
+// Simple healthcheck for orchestration and load balancers
+app.get("/api/health", (req, res) => {
+  res.status(200).json({ success: true, timestamp: Date.now() })
+})
 
 // authentication routes
 app.use("/api/auth", authRoutes)
