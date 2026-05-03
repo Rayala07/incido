@@ -2,6 +2,7 @@ import incidentModel from "../models/incident.model.js"
 import projectModel from "../models/project.model.js"
 import incidentDetailsModel from "../models/incidentDetails.model.js"
 import userModel from "../models/user.model.js"
+import timelineModel from "../models/timeline.model.js"
 import {
   generatePostmortem,
   getSeverity,
@@ -744,3 +745,69 @@ export const searchSimilarIncidents = async (req, res) => {
     })
   }
 }
+
+export const getTimeline = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ success: false, message: "Incident ID is required" });
+    }
+    const timeline = await timelineModel
+      .find({ incidentId: id })
+      .populate("createdBy", "username email")
+      .sort({ createdAt: 1 });
+
+    return res.status(200).json({ success: true, timeline });
+  } catch (error) {
+    console.error("Error fetching timeline:", error);
+    return res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
+export const addTimelineEntry = async (req, res) => {
+  try {
+    const { id: userId } = req.user;
+    const { id } = req.params;
+    const { message, type } = req.body;
+
+    if (!id || !message || !message.trim()) {
+      return res.status(400).json({ success: false, message: "Incident ID and message are required" });
+    }
+
+    const incident = await incidentModel.findById(id);
+    if (!incident) {
+      return res.status(404).json({ success: false, message: "Incident not found" });
+    }
+
+    const timelineEntry = await timelineModel.create({
+      incidentId: id,
+      type: type || "comment",
+      message: message.trim(),
+      createdBy: userId,
+    });
+
+    await timelineEntry.populate("createdBy", "username email");
+
+    return res.status(201).json({ success: true, timelineEntry });
+  } catch (error) {
+    console.error("Error adding timeline entry:", error);
+    return res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
+export const getIncidentDetails = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ success: false, message: "Incident ID is required" });
+    }
+    const details = await incidentDetailsModel.findOne({ incidentId: id });
+    if (!details) {
+      return res.status(404).json({ success: false, message: "Postmortem details not found" });
+    }
+    return res.status(200).json({ success: true, details });
+  } catch (error) {
+    console.error("Error fetching incident details:", error);
+    return res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};

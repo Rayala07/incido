@@ -10,6 +10,9 @@ import {
   assignMembers,
   updateIncident,
   deleteIncident,
+  getTimeline,
+  addTimelineEntry,
+  getIncidentDetails,
 } from "../controllers/incident.controller.js"
 import {
   incidentValidator,
@@ -24,6 +27,9 @@ incidentRoutes.get("/allincidents", verifyUser, getAllIncidents)
 incidentRoutes.get("/search", verifyUser, searchSimilarIncidents)
 incidentRoutes.get("/rag/status", verifyUser, getRagStatus)
 incidentRoutes.get("/:id", verifyUser, getIncident)
+incidentRoutes.get("/:id/timeline", verifyUser, getTimeline)
+incidentRoutes.post("/:id/timeline", verifyUser, addTimelineEntry)
+incidentRoutes.get("/:id/details", verifyUser, getIncidentDetails)
 incidentRoutes.patch("/:id/close", verifyUser, closeIncident)
 incidentRoutes.patch("/:id/assign-members", verifyUser, assignMembersValidator, assignMembers)
 incidentRoutes.patch("/:id", verifyUser, updateIncidentValidator, updateIncident)

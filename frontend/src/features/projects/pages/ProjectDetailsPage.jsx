@@ -49,7 +49,7 @@ const StatBlock = ({ label, value }) => (
 const ProjectDetailsPage = () => {
   const { projectId } = useParams();
   const navigate = useNavigate();
-  const { isAdmin } = useAuth();
+  const { isAdmin, user } = useAuth();
 
   const [project, setProject] = useState(null);
   const [incidents, setIncidents] = useState([]);
@@ -193,6 +193,12 @@ const ProjectDetailsPage = () => {
   const activeCount   = incidents.filter((i) => i.status === "in-progress").length;
   const resolvedCount = incidents.filter((i) => i.status === "resolved").length;
 
+  const currentUserId = user?._id || user?.id;
+  const isProjectLeader = project.members?.some(
+    (m) => m.user?._id === currentUserId && m.role === "leader"
+  );
+  const canCreateIncident = isAdmin || isProjectLeader;
+
   return (
     <div className="w-[100vw] h-[100vh] overflow-hidden flex flex-col bg-[var(--bg-base)]">
       <Navbar />
@@ -272,20 +278,21 @@ const ProjectDetailsPage = () => {
 
               {/* Right-side action strip */}
               <div className="flex flex-col items-end gap-2 shrink-0">
-                {/* Create Incident — visible to all who can access this project */}
-                <button
-                  onClick={() =>
-                    navigate("/incidents/create", {
-                      state: {
-                        projectId: project._id,
-                        projectName: project.name,
-                      },
-                    })
-                  }
-                  className="h-9 px-6 bg-accent text-[var(--accent-text)] font-mono text-[0.72rem] font-medium uppercase tracking-[0.15em] border-none rounded-none cursor-pointer transition-all duration-200 hover:bg-[var(--accent-hover)] hover:-translate-y-px active:translate-y-0"
-                >
-                  + Create Incident
-                </button>
+                {canCreateIncident && (
+                  <button
+                    onClick={() =>
+                      navigate("/incidents/create", {
+                        state: {
+                          projectId: project._id,
+                          projectName: project.name,
+                        },
+                      })
+                    }
+                    className="h-9 px-6 bg-accent text-[var(--accent-text)] font-mono text-[0.72rem] font-medium uppercase tracking-[0.15em] border-none rounded-none cursor-pointer transition-all duration-200 hover:bg-[var(--accent-hover)] hover:-translate-y-px active:translate-y-0"
+                  >
+                    + Create Incident
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -389,10 +396,10 @@ const ProjectDetailsPage = () => {
           <div className="flex flex-col gap-4">
             <div className="flex justify-between items-center">
               <h2 className="font-display font-bold text-lg text-[var(--text-primary)] tracking-tight">
-                Incidents
+                Active Incidents
               </h2>
               <span className="font-mono text-[0.6rem] uppercase tracking-[0.12em] text-[var(--text-muted)]">
-                {incidents.length} total
+                {incidents.filter(i => i.status !== "resolved").length} active
               </span>
             </div>
 
@@ -411,21 +418,21 @@ const ProjectDetailsPage = () => {
               </div>
 
               {/* Table rows */}
-              {incidents.length === 0 ? (
+              {incidents.filter(i => i.status !== "resolved").length === 0 ? (
                 <div className="px-5 py-10 flex flex-col items-center justify-center gap-2">
                   <span className="font-mono text-[0.6rem] uppercase tracking-wider text-[var(--text-muted)]">
-                    No incidents yet
+                    No active incidents
                   </span>
                   <span className="font-sans text-[0.8rem] text-[var(--text-muted)]">
-                    Click "+ Create Incident" to log the first one.
+                    Click "+ Create Incident" to log a new one.
                   </span>
                 </div>
               ) : (
-                incidents.map((incident, idx) => (
+                incidents.filter(i => i.status !== "resolved").map((incident, idx, arr) => (
                   <div
                     key={incident._id}
                     className={`group grid grid-cols-[1fr_100px_100px_120px] gap-4 items-center px-5 py-3.5 cursor-pointer transition-colors duration-150 hover:bg-[var(--accent-subtle)] ${
-                      idx !== incidents.length - 1 ? "border-b border-[var(--border-col)]" : ""
+                      idx !== arr.length - 1 ? "border-b border-[var(--border-col)]" : ""
                     }`}
                     onClick={() => navigate(`/incidents/${incident._id}`)}
                   >
@@ -453,6 +460,75 @@ const ProjectDetailsPage = () => {
                     {/* Date */}
                     <span className="font-mono text-[0.7rem] text-[var(--text-muted)] whitespace-nowrap">
                       {formatDate(incident.createdAt)}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* ── POSTMORTEM REPORTS ──────────────────────────── */}
+          <div className="flex flex-col gap-4 mt-8">
+            <div className="flex justify-between items-center">
+              <h2 className="font-display font-bold text-lg text-[var(--text-primary)] tracking-tight">
+                Postmortem Reports
+              </h2>
+              <span className="font-mono text-[0.6rem] uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                {incidents.filter(i => i.status === "resolved").length} total
+              </span>
+            </div>
+
+            {/* Table */}
+            <div className="w-full border border-[var(--border-col)] bg-[var(--bg-card)]">
+              {/* Table head */}
+              <div className="grid grid-cols-[1fr_100px_120px] gap-4 px-5 py-2.5 border-b border-[var(--border-col)] bg-[var(--bg-base)]">
+                {["Incident Title", "Severity", "Resolved At"].map((h) => (
+                  <span
+                    key={h}
+                    className="font-mono text-[0.58rem] uppercase tracking-[0.12em] text-[var(--text-muted)]"
+                  >
+                    {h}
+                  </span>
+                ))}
+              </div>
+
+              {/* Table rows */}
+              {incidents.filter(i => i.status === "resolved").length === 0 ? (
+                <div className="px-5 py-10 flex flex-col items-center justify-center gap-2">
+                  <span className="font-mono text-[0.6rem] uppercase tracking-wider text-[var(--text-muted)]">
+                    No reports yet
+                  </span>
+                  <span className="font-sans text-[0.8rem] text-[var(--text-muted)]">
+                    Reports are generated when an incident is resolved.
+                  </span>
+                </div>
+              ) : (
+                incidents.filter(i => i.status === "resolved").map((incident, idx, arr) => (
+                  <div
+                    key={incident._id}
+                    className={`group grid grid-cols-[1fr_100px_120px] gap-4 items-center px-5 py-3.5 cursor-pointer transition-colors duration-150 hover:bg-[var(--accent-subtle)] ${
+                      idx !== arr.length - 1 ? "border-b border-[var(--border-col)]" : ""
+                    }`}
+                    onClick={() => navigate(`/incidents/${incident._id}/report`)}
+                  >
+                    {/* Title */}
+                    <div className="flex items-center gap-3 truncate">
+                      <span className="font-sans text-[0.85rem] font-medium text-[var(--text-primary)] group-hover:text-[var(--accent)] transition-colors duration-150 truncate">
+                        {incident.title}
+                      </span>
+                    </div>
+
+                    {/* Severity */}
+                    <div className="flex items-center">
+                      <Pill
+                        label={incident.severity}
+                        styleClass={SEVERITY_STYLES[incident.severity] ?? ""}
+                      />
+                    </div>
+
+                    {/* Date */}
+                    <span className="font-mono text-[0.7rem] text-[var(--text-muted)] whitespace-nowrap">
+                      {incident.resolvedAt ? formatDate(incident.resolvedAt) : formatDate(incident.createdAt)}
                     </span>
                   </div>
                 ))
