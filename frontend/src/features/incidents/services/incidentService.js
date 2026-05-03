@@ -66,6 +66,39 @@ const createIncident = async ({
   return data;
 };
 
-const incidentService = { getAllIncidents, createIncident };
+const getIncident = async (id) => {
+  const { data } = await axiosInstance.get(`/api/incident/${id}`);
+  return data;
+};
+
+const getTimeline = async (id) => {
+  const { data } = await axiosInstance.get(`/api/incident/${id}/timeline`);
+  return data;
+};
+
+const addTimelineEntry = async (id, payload) => {
+  const { data } = await axiosInstance.post(`/api/incident/${id}/timeline`, payload);
+  return data;
+};
+
+const getIncidentDetails = async (id) => {
+  const { data } = await axiosInstance.get(`/api/incident/${id}/details`);
+  return data;
+};
+
+const closeIncident = async (id) => {
+  const { data } = await axiosInstance.patch(`/api/incident/${id}/close`);
+  return data;
+};
+
+const incidentService = { 
+  getAllIncidents, 
+  createIncident,
+  getIncident,
+  getTimeline,
+  addTimelineEntry,
+  getIncidentDetails,
+  closeIncident
+};
 
 export default incidentService;

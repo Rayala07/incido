@@ -13,6 +13,8 @@ import DashboardPage      from "../features/dashboard/pages/DashboardPage";
 import CreateIncidentPage from "../features/incidents/pages/CreateIncidentPage";
 import ProjectsPage       from "../features/projects/pages/ProjectsPage";
 import ProjectDetailsPage from "../features/projects/pages/ProjectDetailsPage";
+import IncidentDetailsPage from "../features/incidents/pages/IncidentDetailsPage";
+import PostmortemReportPage from "../features/incidents/pages/PostmortemReportPage";
 
 // ── ProtectedRoute ─────────────────────────────────────────
 const ProtectedRoute = () => {
@@ -56,6 +58,8 @@ export const router = createBrowserRouter([
       { path: "/projects",                   element: <ProjectsPage /> },
       { path: "/projects/:projectId",        element: <ProjectDetailsPage /> },
       { path: "/incidents/create",           element: <CreateIncidentPage /> },
+      { path: "/incidents/:id",              element: <IncidentDetailsPage /> },
+      { path: "/incidents/:id/report",       element: <PostmortemReportPage /> },
     ],
   },
 
