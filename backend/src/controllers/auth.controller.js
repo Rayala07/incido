@@ -10,6 +10,13 @@ const generateToken = (user) => {
   })
 }
 
+const getAuthCookieOptions = () => ({
+  httpOnly: true,
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+  secure: process.env.NODE_ENV === "production",
+  path: "/",
+})
+
 // register user
 // route: POST /api/auth/register
 export const register = async (req, res) => {
@@ -101,9 +108,10 @@ export const login = async (req, res) => {
     }
 
     const token = generateToken(user)
-    res.cookie("token", token)
+    res.cookie("token", token, getAuthCookieOptions())
     res.json({
       message: "Login successful",
+      token,
       user: {
         id: user._id,
         username: user.username,
@@ -152,7 +160,27 @@ export const verifyEmail = async (req, res) => {
 // logout
 // route: POST /api/auth/logout
 export const logout = (req, res) => {
-  res.clearCookie("token")
+  const cookieOptions = getAuthCookieOptions()
+  const expiredCookieOptions = {
+    ...cookieOptions,
+    expires: new Date(0),
+    maxAge: 0,
+  }
+
+  res.cookie("token", "", expiredCookieOptions)
+  res.cookie("token", "", { ...expiredCookieOptions, path: "/api/auth" })
+
+  if (req.session) {
+    req.session.destroy(() => {
+      res.cookie("connect.sid", "", expiredCookieOptions)
+      return res.status(200).json({
+        message: "Logout successful",
+        success: true,
+      })
+    })
+    return
+  }
+
   res.status(200).json({ message: "Logout successful", success: true })
 }
 
@@ -185,19 +213,28 @@ export const getMe = async (req, res) => {
 
 export const verifyEmailForAssignment = async (req, res) => {
   try {
-    const { email } = req.params;
+    const { email } = req.params
     if (!email) {
-      return res.status(400).json({ success: false, message: "Email is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Email is required" })
     }
 
-    const user = await userModel.findOne({ email: email.toLowerCase() });
-    
+    const user = await userModel.findOne({ email: email.toLowerCase() })
+
     if (!user) {
-      return res.status(404).json({ success: false, message: "Email does not exist in the system" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Email does not exist in the system" })
     }
 
     if (user.role === "admin") {
-      return res.status(400).json({ success: false, message: "Admins cannot be assigned to projects" });
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "Admins cannot be assigned to projects",
+        })
     }
 
     return res.status(200).json({
@@ -205,13 +242,13 @@ export const verifyEmailForAssignment = async (req, res) => {
       user: {
         email: user.email,
         username: user.username,
-      }
-    });
+      },
+    })
   } catch (error) {
-    console.error("Error verifying email:", error);
-    res.status(500).json({ success: false, message: "Internal server error" });
+    console.error("Error verifying email:", error)
+    res.status(500).json({ success: false, message: "Internal server error" })
   }
-};
+}
 
 /**
  * Verify that an email belongs to a user who is a member of a specific project.
@@ -224,44 +261,59 @@ export const verifyEmailForAssignment = async (req, res) => {
  */
 export const verifyResponderEmail = async (req, res) => {
   try {
-    const { email, projectId } = req.query;
+    const { email, projectId } = req.query
 
     if (!email) {
-      return res.status(400).json({ success: false, message: "Email is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Email is required" })
     }
     if (!projectId) {
-      return res.status(400).json({ success: false, message: "projectId is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "projectId is required" })
     }
 
     // Single indexed lookup — O(log N)
-    const user = await userModel.findOne({ email: email.toLowerCase() }).select("_id username email role");
+    const user = await userModel
+      .findOne({ email: email.toLowerCase() })
+      .select("_id username email role")
 
     if (!user) {
-      return res.status(404).json({ success: false, message: "No user found with this email" });
+      return res
+        .status(404)
+        .json({ success: false, message: "No user found with this email" })
     }
 
     if (user.role === "admin") {
-      return res.status(400).json({ success: false, message: "Admins cannot be assigned as responders" });
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "Admins cannot be assigned as responders",
+        })
     }
 
     // Import project model inline to avoid circular dependency at module level
-    const projectModel = (await import("../models/project.model.js")).default;
+    const projectModel = (await import("../models/project.model.js")).default
 
-    const project = await projectModel.findById(projectId).select("members");
+    const project = await projectModel.findById(projectId).select("members")
     if (!project) {
-      return res.status(404).json({ success: false, message: "Project not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Project not found" })
     }
 
     // Check if this user is a member (any role — member or leader) of the project
     const isMember = project.members.some(
-      (m) => m.user.toString() === user._id.toString()
-    );
+      (m) => m.user.toString() === user._id.toString(),
+    )
 
     if (!isMember) {
       return res.status(400).json({
         success: false,
         message: "This user is not a member of the project",
-      });
+      })
     }
 
     return res.status(200).json({
@@ -271,12 +323,12 @@ export const verifyResponderEmail = async (req, res) => {
         email: user.email,
         username: user.username,
       },
-    });
+    })
   } catch (error) {
-    console.error("Error verifying responder email:", error);
-    res.status(500).json({ success: false, message: "Internal server error" });
+    console.error("Error verifying responder email:", error)
+    res.status(500).json({ success: false, message: "Internal server error" })
   }
-};
+}
 
 export const googleCallback = async (req, res) => {
   const FRONTEND_URL = config.FRONTEND_URL
@@ -310,9 +362,9 @@ export const googleCallback = async (req, res) => {
 
     // Generate JWT token (includes user ID and role)
     const token = generateToken(user)
-    res.cookie("token", token)
+    res.cookie("token", token, getAuthCookieOptions())
 
-    // Redirect to frontend dashboard directly. 
+    // Redirect to frontend dashboard directly.
     // The frontend's getMe() hook will detect the secure cookie and log the user in.
     const redirectUrl = `${FRONTEND_URL}/dashboard`
     return res.redirect(redirectUrl)

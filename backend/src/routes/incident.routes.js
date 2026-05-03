@@ -15,6 +15,10 @@ import {
   getIncidentDetails,
 } from "../controllers/incident.controller.js"
 import {
+  createTimelineEntry,
+  getTimelineForIncident,
+} from "../controllers/timeline.controller.js"
+import {
   incidentValidator,
   assignMembersValidator,
   updateIncidentValidator,
@@ -33,6 +37,10 @@ incidentRoutes.get("/:id/details", verifyUser, getIncidentDetails)
 incidentRoutes.patch("/:id/close", verifyUser, closeIncident)
 incidentRoutes.patch("/:id/assign-members", verifyUser, assignMembersValidator, assignMembers)
 incidentRoutes.patch("/:id", verifyUser, updateIncidentValidator, updateIncident)
+
+incidentRoutes.post("/:id/timeline", verifyUser, createTimelineEntry)
+incidentRoutes.get("/:id/timeline", verifyUser, getTimelineForIncident)
+
 incidentRoutes.delete("/:id", verifyUser, deleteIncident)
 
 export default incidentRoutes

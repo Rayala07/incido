@@ -1,5 +1,6 @@
 import "dotenv/config"
 import express from "express"
+import helmet from "helmet"
 import cookieParser from "cookie-parser"
 import session from "express-session"
 import MongoStore from "connect-mongo"
@@ -21,6 +22,18 @@ const app = express()
 
 connectDB()
 app.use(morgan("dev"))
+app.use(
+  helmet({
+    crossOriginResourcePolicy: false,
+    permissionsPolicy: {
+      features: {
+        camera: ["'none'"],
+        microphone: ["'none'"],
+        geolocation: ["'none'"],
+      },
+    },
+  }),
+)
 app.use(express.json())
 app.use(cookieParser())
 

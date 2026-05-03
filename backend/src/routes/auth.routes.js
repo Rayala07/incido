@@ -14,22 +14,31 @@ import { loginValidator, registerValidator } from "../validation/validate.js"
 import passport from "../config/googleOauth.js"
 import { verifyUser } from "../middlewares/verifyuser.js"
 import { config } from "../config/config.js"
+import {
+  authLimiter,
+  oauthInitiationLimiter,
+} from "../middlewares/rateLimiters.js"
 
 const authRoutes = express.Router()
 
 // normal Register and Login routes
-authRoutes.post("/register", registerValidator, register);
-authRoutes.post("/login", loginValidator, login);
-authRoutes.get("/logout", logout);
-authRoutes.get("/verify-email", verifyEmail);
+authRoutes.post("/register", authLimiter, registerValidator, register)
+authRoutes.post("/login", authLimiter, loginValidator, login)
+authRoutes.post("/logout", logout)
+authRoutes.get("/logout", logout)
+authRoutes.get("/verify-email", verifyEmail)
 authRoutes.get("/users", verifyUser, getAllUsers)
-authRoutes.get("/verify-assignment-email/:email", verifyUser, verifyEmailForAssignment);
-authRoutes.get("/verify-responder-email", verifyUser, verifyResponderEmail);
-authRoutes.get("/me", verifyUser, getMe);
+authRoutes.get(
+  "/verify-assignment-email/:email",
+  verifyUser,
+  verifyEmailForAssignment,
+)
+authRoutes.get("/verify-responder-email", verifyUser, verifyResponderEmail)
+authRoutes.get("/me", verifyUser, getMe)
 
 // Google OAuth - Initiate login with role parameter
 // Frontend calls: /api/auth/google?role=admin or /api/auth/google?role=member
-authRoutes.get("/google", (req, res, next) => {
+authRoutes.get("/google", oauthInitiationLimiter, (req, res, next) => {
   // Extract role from query params (default to 'responder' if not provided)
   let role = req.query.role || "responder"
 

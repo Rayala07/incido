@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios from "axios"
 
 /**
  * Shared Axios instance for all API calls.
@@ -7,12 +7,15 @@ import axios from "axios";
  * withCredentials: true — sends the HttpOnly JWT cookie on every request,
  * which is required for /api/auth/me and all protected endpoints.
  */
+const backendBaseUrl =
+  import.meta.env.VITE_BACKEND_URL || "http://localhost:3000"
+
 const axiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_BACKEND_URL,
+  baseURL: backendBaseUrl,
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",
   },
-});
+})
 
-export default axiosInstance;
+export default axiosInstance
