@@ -10,12 +10,19 @@ const generateToken = (user) => {
   })
 }
 
-const getAuthCookieOptions = () => ({
-  httpOnly: true,
-  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-  secure: process.env.NODE_ENV === "production",
-  path: "/",
-})
+const getAuthCookieOptions = () => {
+  const isProduction = 
+    process.env.NODE_ENV === "production" || 
+    config.BASE_URL.includes("onrender") || 
+    config.FRONTEND_URL.includes("vercel");
+
+  return {
+    httpOnly: true,
+    sameSite: isProduction ? "none" : "lax",
+    secure: isProduction,
+    path: "/",
+  }
+}
 
 // register user
 // route: POST /api/auth/register
@@ -36,23 +43,32 @@ export const register = async (req, res) => {
     // Only allow 'responder' or 'admin' at registration — never 'leader' (project-scoped)
     const safeRole = role === "admin" ? "admin" : "responder";
 
-    // Create new user with isVerified set to true
+    // Create new user with isVerified set to false
     const user = await userModel.create({
       username,
       email,
       password,
       role: safeRole,
-      isVerified: true,
+      isVerified: false,
       profile: `${config.BASE_URL}/assets/no_profile.jpg`,
     })
 
-    // Attempt to send verification email without blocking
-    sendVerificationEmail(email, username).catch((emailError) => {
+    // Send verification email
+    try {
+      await sendVerificationEmail(email, username)
+    } catch (emailError) {
       console.error("Failed to send verification email:", emailError)
-    })
+      await userModel.deleteOne({ _id: user._id })
+      return res.status(500).json({
+        message:
+          "Failed to send verification email. Please try registering again.",
+        success: false,
+      })
+    }
 
     res.status(201).json({
-      message: "User registered successfully.",
+      message:
+        "User registered successfully. Please check your email to verify your account.",
       success: true,
       user: {
         id: user._id,
