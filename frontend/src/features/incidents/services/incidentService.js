@@ -92,6 +92,22 @@ const closeIncident = async (id) => {
 };
 
 /**
+ * Download the postmortem report for a resolved incident as a PDF.
+ * The backend uses Puppeteer to render the report to A4 PDF.
+ *
+ * IMPORTANT: responseType must be 'blob' — the server streams raw binary
+ * PDF bytes, not JSON. If this is omitted, Axios corrupts the buffer.
+ *
+ * Returns: a Blob of type application/pdf
+ */
+const downloadPostmortemPDF = async (id) => {
+  const response = await axiosInstance.get(`/api/incident/${id}/download-pdf`, {
+    responseType: "blob",
+  });
+  return response.data; // raw Blob
+};
+
+/**
  * Search for past incidents similar to the given query string.
  * Uses the RAG pipeline on the backend (Pinecone vector search + AI explanation).
  *
@@ -114,6 +130,7 @@ const incidentService = {
   addTimelineEntry,
   getIncidentDetails,
   closeIncident,
+  downloadPostmortemPDF,
   searchSimilarIncidents,
 };
 
