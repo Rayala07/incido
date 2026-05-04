@@ -53,10 +53,13 @@ export const register = async (req, res) => {
       profile: `${config.BASE_URL}/assets/no_profile.jpg`,
     })
 
-    // Attempt to send verification email without blocking the request
-    sendVerificationEmail(email, username).catch((emailError) => {
-      console.error("Failed to send verification email:", emailError)
-    })
+    // Attempt to send verification email and await it so errors are caught
+    try {
+      await sendVerificationEmail(email, username);
+      console.log("Registration email dispatch complete for:", email);
+    } catch (emailError) {
+      console.error("Failed to send verification email:", emailError);
+    }
 
     res.status(201).json({
       message: "User registered successfully.",
