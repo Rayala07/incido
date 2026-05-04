@@ -17,6 +17,20 @@ Incido is a DevOps and SRE productivity platform for managing production outages
 
 > Smart Incident Response Platform: A system for managing production outages and incidents with features like incident creation, responder assignment, timeline tracking, postmortems, live updates, and AI assisted insights.
 
+## Admin Login
+
+```
+Email: developer.rayala@gmail.com
+Password: Reyzox@123
+
+## Responder Login
+
+```
+Login using google auth or login using email and password
+use any email address to register for responder 
+***Preffered Google Oauth***
+```
+
 ## Quick Navigation
 
 - [Team Stack Breakers](#team--stack-breakers)
