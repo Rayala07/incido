@@ -68,10 +68,18 @@ export const getAllProjects = async (req, res) => {
       .populate("members.user", "username email profile")
       .sort({ createdAt: -1 });
 
+    const projectsObj = projects.map(p => {
+      const obj = p.toObject();
+      if (obj.members) {
+        obj.members = obj.members.filter(m => m.user != null);
+      }
+      return obj;
+    });
+
     return res.status(200).json({
       success: true,
-      count: projects.length,
-      projects,
+      count: projectsObj.length,
+      projects: projectsObj,
     });
   } catch (error) {
     console.error("Error fetching projects:", error);
@@ -262,9 +270,14 @@ export const getProjectById = async (req, res) => {
         message: "Project not found",
       });
     }
+    const projectObj = project.toObject();
+    if (projectObj.members) {
+      projectObj.members = projectObj.members.filter(m => m.user != null);
+    }
+
     return res.status(200).json({
       success: true,
-      project,
+      project: projectObj,
     });
   } catch (error) {
     console.error("Error fetching project by ID:", error);

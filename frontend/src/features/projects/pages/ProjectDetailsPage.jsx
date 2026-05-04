@@ -358,7 +358,7 @@ const ProjectDetailsPage = () => {
                   {/* Avatar initials */}
                   <div className="w-7 h-7 bg-[var(--accent-subtle)] border border-[var(--accent)] flex items-center justify-center shrink-0">
                     <span className="font-mono text-[0.6rem] uppercase text-[var(--accent)]">
-                      {m.user?.username?.slice(0, 2) || "??"}
+                      {m.user.username?.slice(0, 2) || "??"}
                     </span>
                   </div>
                   <div className="flex flex-col">
