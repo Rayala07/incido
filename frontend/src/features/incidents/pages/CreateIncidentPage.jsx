@@ -6,6 +6,7 @@ import IncidentMemoryPanel from "../components/IncidentMemoryPanel";
 import { createIncidentSchema } from "../utils/incidentValidation";
 import incidentService from "../services/incidentService";
 import authService from "../../auth/services/authService";
+import projectService from "../../projects/services/projectService";
 
 const CreateIncidentPage = () => {
   const location = useLocation();
@@ -24,7 +25,8 @@ const CreateIncidentPage = () => {
   const [responders, setResponders] = useState([]);
   const [responderInput, setResponderInput] = useState("");
   const [responderError, setResponderError] = useState("");
-  const [isVerifyingResponder, setIsVerifyingResponder] = useState(false);
+  const [projectMembers, setProjectMembers] = useState([]);
+  const [showDropdown, setShowDropdown] = useState(false);
 
   const [formErrors, setFormErrors] = useState({});
   const [apiError, setApiError] = useState("");
@@ -78,60 +80,47 @@ const CreateIncidentPage = () => {
     return () => clearTimeout(debounceRef.current);
   }, [title, description]);
 
+  // Fetch project members on mount so we can search/filter them locally
+  useEffect(() => {
+    if (!projectId) return;
+    const fetchMembers = async () => {
+      try {
+        const res = await projectService.getProjectById(projectId);
+        if (res.success && res.project.members) {
+          const users = res.project.members.filter(m => m.user != null).map(m => m.user);
+          setProjectMembers(users);
+        }
+      } catch (err) {
+        console.error("Failed to fetch project members", err);
+      }
+    };
+    fetchMembers();
+  }, [projectId]);
 
-  /**
-   * Async responder add.
-   * On Enter or comma: validate format, then call the backend to confirm the
-   * email belongs to a project member (any role). Only add to the list if valid.
-   */
-  const handleResponderKeyDown = async (e) => {
-    if (e.key !== "Enter" && e.key !== ",") return;
+  const filteredMembers = projectMembers.filter((u) => {
+    if (!responderInput) return true;
+    const term = responderInput.toLowerCase();
+    return (
+      (u.username && u.username.toLowerCase().includes(term)) ||
+      (u.email && u.email.toLowerCase().includes(term))
+    );
+  });
+
+
+  const handleResponderKeyDown = (e) => {
+    if (e.key !== "Enter") return;
     e.preventDefault();
 
-    const email = responderInput.trim().replace(",", "").toLowerCase();
-    if (!email) return;
+    if (!responderInput.trim() || filteredMembers.length === 0) return;
 
-    // Basic format check first
-    const { emailSchema } = await import("../utils/incidentValidation");
-    const fmt = emailSchema.safeParse(email);
-    if (!fmt.success) {
-      setResponderError(fmt.error.issues[0].message);
-      return;
-    }
-
-    if (responders.some((r) => r.email === email)) {
-      setResponderError("This email is already in the responders list.");
-      return;
-    }
-
-    if (responders.length >= 5) {
-      setResponderError("Maximum 5 responders allowed.");
-      return;
-    }
-
-    if (!projectId) {
-      setResponderError("No project context — cannot verify membership.");
-      return;
-    }
-
-    setResponderError("");
-    setIsVerifyingResponder(true);
-
-    try {
-      const res = await authService.verifyResponderEmail(email, projectId);
-      if (res.success) {
-        setResponders((prev) => [
-          ...prev,
-          { email: res.user.email, username: res.user.username },
-        ]);
-        setResponderInput("");
-      }
-    } catch (err) {
-      setResponderError(
-        err.response?.data?.message || "Failed to verify this email."
-      );
-    } finally {
-      setIsVerifyingResponder(false);
+    // Auto-select the first filtered member if they hit enter
+    const u = filteredMembers[0];
+    const isAlreadyAdded = responders.some(r => r.email === u.email);
+    if (!isAlreadyAdded && responders.length < 5) {
+      setResponders((prev) => [...prev, { email: u.email, username: u.username }]);
+      setResponderInput("");
+      setShowDropdown(false);
+      setResponderError("");
     }
   };
 
@@ -338,29 +327,52 @@ const CreateIncidentPage = () => {
               
               <div className="relative">
                 <input
-                  type="email"
+                  type="text"
                   value={responderInput}
                   onChange={(e) => {
                     setResponderInput(e.target.value);
+                    setShowDropdown(true);
                     if (responderError) setResponderError("");
                   }}
+                  onFocus={() => setShowDropdown(true)}
+                  onBlur={() => setShowDropdown(false)}
                   onKeyDown={handleResponderKeyDown}
                   placeholder={
                     responders.length >= 5
                       ? "Maximum 5 responders reached"
-                      : isVerifyingResponder
-                      ? "Verifying..."
-                      : "Enter email and press Enter to add"
+                      : "Search project members by name or email..."
                   }
-                  disabled={responders.length >= 5 || isVerifyingResponder}
-                  className={`w-full h-9 bg-[var(--bg-base)] border ${
+                  disabled={responders.length >= 5}
+                  className={`w-full h-9 bg-[var(--bg-card)] border ${
                     responderError ? "border-[#EF4444]" : "border-[var(--border-col)]"
-                  } rounded-none px-3 font-sans text-[0.85rem] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] placeholder:opacity-60 focus:outline-none focus:border-[var(--accent)] focus:shadow-[0_0_0_2px_rgba(26,63,212,0.12)] transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed`}
+                  } rounded-none px-3 font-sans text-[0.85rem] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] placeholder:opacity-60 focus:outline-none focus:border-[var(--accent)] transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed`}
                 />
-                {isVerifyingResponder && (
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 font-mono text-[0.55rem] uppercase tracking-wider text-[var(--accent)]">
-                    Checking...
-                  </span>
+                
+                {showDropdown && filteredMembers.length > 0 && responders.length < 5 && (
+                  <div className="absolute top-full left-0 mt-1 w-full max-h-48 overflow-y-auto bg-[var(--bg-card)] border border-[var(--border-col)] shadow-xl z-50">
+                    {filteredMembers.map(u => {
+                      const isAlreadyAdded = responders.some(r => r.email === u.email);
+                      return (
+                        <div 
+                          key={u._id || u.email}
+                          className={`px-3 py-2 flex flex-col border-b border-[var(--border-col)] last:border-b-0 ${isAlreadyAdded ? "opacity-50 cursor-not-allowed bg-[var(--bg-base)]" : "cursor-pointer hover:bg-[var(--bg-base)]"}`}
+                          onMouseDown={(e) => e.preventDefault()} // Prevent blur
+                          onClick={() => {
+                            if (isAlreadyAdded) return;
+                            setResponders(prev => [...prev, { email: u.email, username: u.username }]);
+                            setResponderInput("");
+                            setShowDropdown(false);
+                            setResponderError("");
+                          }}
+                        >
+                          <span className="font-sans text-[0.8rem] font-medium text-[var(--text-primary)]">
+                            {u.username} {isAlreadyAdded ? "(Added)" : ""}
+                          </span>
+                          <span className="font-mono text-[0.6rem] text-[var(--text-muted)]">{u.email}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 )}
               </div>
               <FieldError error={responderError} />
