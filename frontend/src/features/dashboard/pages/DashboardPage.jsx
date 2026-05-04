@@ -87,8 +87,8 @@ const DashboardPage = () => {
   const [loading,   setLoading]   = useState(true);
 
   useEffect(() => {
-    document.body.classList.add("scrollbar-hide");
-    return () => document.body.classList.remove("scrollbar-hide");
+    document.documentElement.classList.add("scrollbar-hide");
+    return () => document.documentElement.classList.remove("scrollbar-hide");
   }, []);
 
   useEffect(() => {
@@ -117,7 +117,7 @@ const DashboardPage = () => {
   /* ── Loading state ── */
   if (loading) {
     return (
-      <div className="min-h-screen bg-[var(--bg-base)] flex flex-col overflow-hidden">
+      <div className="min-h-screen bg-[var(--bg-base)] flex flex-col">
         <Navbar />
         <div className="flex-1 flex items-center justify-center">
           <RiLoader4Line className="animate-spin text-[var(--text-muted)]" size={32} />
@@ -202,10 +202,10 @@ const DashboardPage = () => {
 
   /* ── Render ── */
   return (
-    <div className="min-h-screen bg-[var(--bg-base)] flex flex-col overflow-hidden">
+    <div className="min-h-screen bg-[var(--bg-base)] flex flex-col">
       <Navbar />
 
-      <main className="flex-1 w-full px-6 md:px-12 lg:px-16 py-10 overflow-y-auto scrollbar-hide">
+      <main className="flex-1 w-full px-6 md:px-12 lg:px-16 py-10">
         <div className="w-full flex flex-col gap-10">
 
           {/* ── Page Header ── */}

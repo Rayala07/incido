@@ -118,6 +118,11 @@ const IncidentListPage = () => {
   const [sortBy,      setSortBy]      = useState("newest");
 
   useEffect(() => {
+    document.documentElement.classList.add("scrollbar-hide");
+    return () => document.documentElement.classList.remove("scrollbar-hide");
+  }, []);
+
+  useEffect(() => {
     const load = async () => {
       try {
         setLoading(true);
