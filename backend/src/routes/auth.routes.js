@@ -42,7 +42,8 @@ authRoutes.get("/google", oauthInitiationLimiter, (req, res, next) => {
   // Extract role from query params (default to 'responder' if not provided)
   let role = req.query.role || "responder"
 
-  // Sanitize the role to prevent injection vulnerabilities
+  // Sanitize the role to prevent injection vulnerabilities.
+  // Only platform-level roles are valid here — never 'leader' (project-scoped).
   if (role !== "admin" && role !== "responder") {
     role = "responder"
   }

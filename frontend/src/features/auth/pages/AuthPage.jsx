@@ -30,7 +30,7 @@ const backendBaseUrl =
 
 export default function AuthPage() {
   // Track which role is selected
-  const [role, setRole] = useState("member")
+  const [role, setRole] = useState("responder")
 
   // Check if this user came via invite link
   const [roleFromInvite, setRoleFromInvite] = useState(null)
@@ -41,7 +41,7 @@ export default function AuthPage() {
     const inviteRole = params.get("role")
 
     // If invite link has a role, lock it in (don't allow selection)
-    if (inviteRole && ["admin", "member", "leader"].includes(inviteRole)) {
+    if (inviteRole && ["admin", "responder", "leader"].includes(inviteRole)) {
       setRoleFromInvite(inviteRole)
       setRole(inviteRole)
     }
@@ -82,14 +82,14 @@ export default function AuthPage() {
                 <span className="role-desc">Full access</span>
               </button>
 
-              {/* Member Button */}
+              {/* Responder Button */}
               <button
-                className={`role-btn ${role === "member" ? "active" : ""}`}
-                onClick={() => handleRoleSelect("member")}
-                title="Member: Can view and create incidents"
+                className={`role-btn ${role === "responder" ? "active" : ""}`}
+                onClick={() => handleRoleSelect("responder")}
+                title="Responder: Can view and create incidents"
               >
                 <span className="role-icon">👤</span>
-                <span className="role-name">Member</span>
+                <span className="role-name">Responder</span>
                 <span className="role-desc">Standard access</span>
               </button>
             </div>

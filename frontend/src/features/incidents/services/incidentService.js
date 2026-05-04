@@ -91,6 +91,21 @@ const closeIncident = async (id) => {
   return data;
 };
 
+/**
+ * Search for past incidents similar to the given query string.
+ * Uses the RAG pipeline on the backend (Pinecone vector search + AI explanation).
+ *
+ * Query: GET /api/incident/search?q=<text>
+ * Returns: { success, matchCount, confidence, recurring, recurringMessage,
+ *            insight, suggestedFixes, isNewPattern, results: [] }
+ */
+const searchSimilarIncidents = async (query) => {
+  const { data } = await axiosInstance.get(
+    `/api/incident/search?q=${encodeURIComponent(query.trim())}`
+  );
+  return data;
+};
+
 const incidentService = { 
   getAllIncidents, 
   createIncident,
@@ -98,7 +113,8 @@ const incidentService = {
   getTimeline,
   addTimelineEntry,
   getIncidentDetails,
-  closeIncident
+  closeIncident,
+  searchSimilarIncidents,
 };
 
 export default incidentService;
