@@ -13,8 +13,8 @@ const generateToken = (user) => {
 const getAuthCookieOptions = () => {
   const isProduction = 
     process.env.NODE_ENV === "production" || 
-    config.BASE_URL.includes("onrender") || 
-    config.FRONTEND_URL.includes("vercel");
+    config.BASE_URL?.includes("onrender") || 
+    config.FRONTEND_URL?.includes("vercel");
 
   return {
     httpOnly: true,

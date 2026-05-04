@@ -65,8 +65,8 @@ app.use(cookieParser())
 // Session middleware for storing user role during OAuth flow
 const isProductionSession = 
   process.env.NODE_ENV === "production" || 
-  config.BASE_URL.includes("onrender") || 
-  config.FRONTEND_URL.includes("vercel");
+  config.BASE_URL?.includes("onrender") || 
+  config.FRONTEND_URL?.includes("vercel");
 
 app.use(
   session({
