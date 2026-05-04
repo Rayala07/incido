@@ -2,7 +2,7 @@ import rateLimit from "express-rate-limit"
 import { default as redis } from "../config/redis.js"
 
 // Helper to create a Redis-backed rate limiter middleware (simple token bucket using INCR/EXPIRE)
-const createRedisLimiter = ({ windowMs, max, message, keyPrefix = "rl" }) => {
+const createRedisLimiter = ({ windowMs, limit, message, keyPrefix = "rl" }) => {
   const ttlSeconds = Math.ceil(windowMs / 1000)
 
   return async (req, res, next) => {
@@ -19,13 +19,13 @@ const createRedisLimiter = ({ windowMs, max, message, keyPrefix = "rl" }) => {
         await redis.expire(key, ttlSeconds)
       }
 
-      const remaining = Math.max(0, max - current)
-      res.setHeader("X-RateLimit-Limit", max)
+      const remaining = Math.max(0, limit - current)
+      res.setHeader("X-RateLimit-Limit", limit)
       res.setHeader("X-RateLimit-Remaining", remaining)
       const ttl = await redis.ttl(key)
       res.setHeader("X-RateLimit-Reset", ttl)
 
-      if (current > max) {
+      if (current > limit) {
         return res.status(429).json({ success: false, message })
       }
 

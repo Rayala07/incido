@@ -34,41 +34,50 @@ const CreateIncidentPage = () => {
   const [scanResult, setScanResult] = useState(null);
   const debounceRef = useRef(null);
 
+  // ── AI Similarity Scan ─────────────────────────────────────────────────────
+  // Debounced real-time scan against the RAG backend.
+  // Triggers when title >= 5 chars OR description >= 20 chars.
+  // Sends both title + description for maximum vector context.
   useEffect(() => {
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current);
-    }
-    
-    if (!title.trim() && !impactedService.trim()) {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    const titleReady       = title.trim().length >= 5;
+    const descriptionReady = description.trim().length >= 20;
+
+    if (!titleReady && !descriptionReady) {
       setScanStatus("idle");
       setScanResult(null);
       return;
     }
 
-    debounceRef.current = setTimeout(() => {
-      setScanStatus("loading");
+    setScanStatus("loading");
 
-      setTimeout(() => {
-        const triggerFound = (title + impactedService).toLowerCase().includes("db") || 
-                             (title + impactedService).toLowerCase().includes("database");
-
-        if (triggerFound) {
-          setScanStatus("found");
-          setScanResult({
-            similarIncident: "Database timeout causing API failures — Q3 2024",
-            rootCause: "Connection pool exhaustion under high write load",
-            potentialFix: "Increase pool size to 50, add circuit breaker on DB writes",
-            actionItemStatus: "open",
-          });
+    debounceRef.current = setTimeout(async () => {
+      const query = [title.trim(), description.trim()].filter(Boolean).join(" ");
+      try {
+        const result = await incidentService.searchSimilarIncidents(query);
+        if (result.success) {
+          if (result.isNewPattern || result.matchCount === 0) {
+            setScanStatus("not-found");
+            setScanResult(null);
+          } else {
+            setScanStatus("found");
+            setScanResult(result);
+          }
         } else {
           setScanStatus("not-found");
           setScanResult(null);
         }
-      }, 1000); 
+      } catch {
+        // On error, fail silently — never block the form
+        setScanStatus("not-found");
+        setScanResult(null);
+      }
     }, 800);
 
     return () => clearTimeout(debounceRef.current);
-  }, [title, impactedService]);
+  }, [title, description]);
+
 
   /**
    * Async responder add.

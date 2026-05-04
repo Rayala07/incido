@@ -33,12 +33,15 @@ export const register = async (req, res) => {
         .json({ message: "User already exists", success: false })
     }
 
+    // Only allow 'responder' or 'admin' at registration — never 'leader' (project-scoped)
+    const safeRole = role === "admin" ? "admin" : "responder";
+
     // Create new user with isVerified set to false
     const user = await userModel.create({
       username,
       email,
       password,
-      role,
+      role: safeRole,
       isVerified: false,
       profile: `${config.BASE_URL}/assets/no_profile.jpg`,
     })
@@ -80,6 +83,13 @@ export const register = async (req, res) => {
 export const login = async (req, res) => {
   const { email, password, username } = req.body
 
+  if ((!email && !username) || !password) {
+    return res.status(400).json({
+      message: "Please provide email/username and password",
+      success: false,
+    })
+  }
+
   try {
     const user = await userModel
       .findOne({
@@ -91,6 +101,15 @@ export const login = async (req, res) => {
         .status(400)
         .json({ message: "Invalid credentials", success: false })
     }
+
+    // OAuth users don't have a password — direct them to Google Sign-In
+    if (user.usertype === "google") {
+      return res.status(400).json({
+        message: "This account was created with Google. Please sign in with Google.",
+        success: false,
+      })
+    }
+
     const isMatch = await user.comparePassword(password)
     if (!isMatch) {
       return res
@@ -109,16 +128,15 @@ export const login = async (req, res) => {
 
     const token = generateToken(user)
     res.cookie("token", token, getAuthCookieOptions())
-    res.json({
+    return res.json({
       message: "Login successful",
-      token,
+      success: true,
       user: {
         id: user._id,
         username: user.username,
         email: user.email,
         role: user.role,
         usertype: user.usertype,
-        role: user.role,
         isVerified: user.isVerified,
       },
     })
@@ -337,9 +355,10 @@ export const googleCallback = async (req, res) => {
   const profilePic = photos[0].value
 
   try {
-    // Get role from session (set during /google route)
-    // If no role in session (e.g. cookie dropped cross-domain), default to 'responder'
-    const userRole = req.session?.userRole || "responder"
+    // Read role from session — set in /api/auth/google route when user initiated OAuth.
+    // Falls back to 'responder' if session was lost (e.g. cross-domain cookie drop).
+    // This is only used for NEW user creation; existing users keep their stored role.
+    const userRole = (req.session?.userRole === "admin") ? "admin" : "responder";
 
     // Check if user already exists
     let user = await userModel.findOne({ email })

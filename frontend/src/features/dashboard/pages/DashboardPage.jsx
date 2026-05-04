@@ -46,7 +46,8 @@ const SeverityBadge = ({ severity }) => {
 
 const DashboardPage = () => {
   const { user } = useAuth();
-  const role = user?.role || "member";
+  // Platform-level role: only 'admin' or 'responder'
+  const platformRole = user?.role || "responder";
   
   const [incidents, setIncidents] = useState([]);
   const [projects, setProjects] = useState([]);
@@ -68,7 +69,7 @@ const DashboardPage = () => {
         setIncidents(incRes.incidents || []);
         setProjects(projRes.projects || []);
 
-        if (role === 'admin') {
+        if (platformRole === 'admin') {
           const usrRes = await authService.getAllUsers();
           setUsers(usrRes.users || []);
         }
@@ -79,7 +80,7 @@ const DashboardPage = () => {
       }
     };
     if (user) loadData();
-  }, [user, role]);
+  }, [user, platformRole]);
 
   if (loading) {
     return (
@@ -91,6 +92,19 @@ const DashboardPage = () => {
       </div>
     );
   }
+
+  // Derive effective display role from live project membership.
+  // A user is shown the "leader" view if they lead at least one project,
+  // regardless of their platform role. Admins always see the admin view.
+  const isLeaderOfAny = projects.some(p =>
+    p.members?.some(m => m.user?._id === user?._id && m.role === "leader")
+  );
+
+  const role = platformRole === "admin"
+    ? "admin"
+    : isLeaderOfAny
+    ? "leader"
+    : "responder";
 
   // --- STATS CALCULATION ---
   const now = new Date();
@@ -105,7 +119,7 @@ const DashboardPage = () => {
     const isAssigned = inc.members?.some(m => m._id === user?._id) || inc.leader?._id === user?._id;
     
     if (inc.status !== 'resolved') {
-      if (role === 'member') {
+      if (role === 'responder') {
         if (isAssigned) activeCount++;
       } else {
         activeCount++;
@@ -113,7 +127,7 @@ const DashboardPage = () => {
     } else {
       const resolvedAt = inc.resolvedAt ? new Date(inc.resolvedAt) : new Date(inc.updatedAt);
       if (resolvedAt >= oneWeekAgo) {
-        if (role === 'member') {
+        if (role === 'responder') {
            if (isAssigned) resolvedCount++;
         } else {
            resolvedCount++;
@@ -130,7 +144,7 @@ const DashboardPage = () => {
   // --- FILTERED LISTS ---
   const activeIncidentsList = incidents.filter(i => {
     if (i.status === 'resolved') return false;
-    if (role === 'member') return i.members?.some(m => m._id === user?._id) || i.leader?._id === user?._id;
+    if (role === 'responder') return i.members?.some(m => m._id === user?._id) || i.leader?._id === user?._id;
     return true;
   });
 
@@ -148,14 +162,14 @@ const DashboardPage = () => {
       activeTitle: "ACTIVE INCIDENTS",
       projTitle: "PROJECTS YOU LEAD"
     },
-    member: {
-      alert: "MEMBER WORKSPACE — INDIVIDUAL SCOPE",
+    responder: {
+      alert: "RESPONDER WORKSPACE — INDIVIDUAL SCOPE",
       activeTitle: "ASSIGNED TO ME",
       projTitle: "MY PROJECTS"
     }
   };
   
-  const ui = config[role] || config.member;
+  const ui = config[role] || config.responder;
 
   return (
     <div className="min-h-screen bg-[var(--bg-base)] text-[var(--text-primary)] font-sans selection:bg-white/20 flex flex-col scrollbar-hide">

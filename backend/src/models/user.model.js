@@ -25,6 +25,8 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
+      // Platform-level role only. "leader" is a PROJECT-SCOPED role stored in
+      // project.members[].role — it is NOT a permanent identity on the user.
       enum: ["admin", "responder"],
       default: "responder",
     },
@@ -62,6 +64,8 @@ userSchema.pre("save", async function () {
 
 // Method to compare password during login
 userSchema.methods.comparePassword = async function (enteredPassword) {
+  // Guard: OAuth users have no stored password
+  if (!this.password) return false;
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
