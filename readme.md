@@ -1,19 +1,25 @@
 # Incido — Smart Incident Response Platform
 
-**Access Frontend:** https://incido-green.vercel.app/
+## Team Stack Breakers
 
-Incido is a **DevOps / SRE productivity product** for managing production outages end-to-end.
+Team Leader: Mannat Gupta  
+Teammates: Rayala Viswanath, Srutidev Barman  
 
-Built during **Sheryians Startup Build Hackathon 2026**, this platform addresses the problem statement:
-
-> **Smart Incident Response Platform:** Create a system for managing production outages and incidents. Features include creating incidents, assigning responders, maintaining timelines, generating postmortems, providing live updates, and displaying a public status page. AI may be integrated for summarizing incidents and suggesting root causes.
+This project was built as part of Sheryians Startup Build Hackathon 2026, focusing on real world incident response workflows where speed, clarity, and coordination matter during downtime events.
 
 **Pitch Video:** https://drive.google.com/file/d/1SuC_XcCFrWKd-egktF37PgoY-4EI7mEQ/view?usp=drive_link
 
 ---
 
+**Access Frontend:** https://incido-green.vercel.app/
+
+Incido is a DevOps and SRE productivity platform for managing production outages end to end. It enables teams to create incidents, assign responders, track timelines, generate AI powered postmortems, and extract action items to ensure permanent fixes and prevent recurring issues.
+
+> Smart Incident Response Platform: A system for managing production outages and incidents with features like incident creation, responder assignment, timeline tracking, postmortems, live updates, and AI assisted insights.
+
 ## Quick Navigation
 
+- [Team Stack Breakers](#team--stack-breakers)
 - [Live Deployment (Vercel + Render)](#live-deployment-vercel--render)
 - [Product Type](#product-type)
 - [Key Features (Detailed)](#key-features-detailed)
@@ -29,8 +35,6 @@ Built during **Sheryians Startup Build Hackathon 2026**, this platform addresses
 - [Quick Start](#quick-start)
 - [Repository Structure](#repository-structure)
 - [Contribution Guide](#contribution-guide)
-- [Team / Hackathon Context](#team--hackathon-context)
-- [License](#license)
 
 ---
 
@@ -402,12 +406,4 @@ We welcome contributions.
 
 ---
 
-## Team / Hackathon Context
-
-This project is part of **Sheryians Startup Build Hackathon 2026** and is built around real-world incident response workflows where speed, clarity, and coordination matter during downtime events.
-
----
-
-## License
-
-Please add your preferred license for open-source/public usage.
+**_We turn chaos into clarity._**
