@@ -350,7 +350,7 @@ const ProjectDetailsPage = () => {
               </div>
             ) : (
               <div className="flex flex-wrap gap-3">
-              {project.members?.map((m) => (
+              {project.members?.filter(m => m.user).map((m) => (
                 <div
                   key={m.user._id}
                   className="flex items-center gap-3 bg-[var(--bg-card)] border border-[var(--border-col)] px-4 py-2.5"
