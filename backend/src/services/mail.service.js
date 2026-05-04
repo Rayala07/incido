@@ -12,6 +12,44 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+const formatList = (items) =>
+  Array.isArray(items) && items.length > 0 ? items.join(", ") : "None";
+
+const buildIncidentNotificationHtml = ({
+  recipientName,
+  actionLabel,
+  incident,
+  projectName,
+  leaderName,
+  createdByName,
+  incidentUrl,
+}) => {
+  return `
+    <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111827;">
+      <h2 style="margin: 0 0 12px;">Incido Incident ${actionLabel}</h2>
+      <p>Hello ${recipientName || "team member"},</p>
+      <p>You have been notified about an incident update in <strong>${projectName || "your project"}</strong>.</p>
+      <table style="border-collapse: collapse; width: 100%; max-width: 720px; margin: 16px 0;">
+        <tr><td style="padding: 8px; border: 1px solid #e5e7eb; font-weight: bold; width: 180px;">Title</td><td style="padding: 8px; border: 1px solid #e5e7eb;">${incident.title}</td></tr>
+        <tr><td style="padding: 8px; border: 1px solid #e5e7eb; font-weight: bold;">Description</td><td style="padding: 8px; border: 1px solid #e5e7eb;">${incident.description}</td></tr>
+        <tr><td style="padding: 8px; border: 1px solid #e5e7eb; font-weight: bold;">Severity</td><td style="padding: 8px; border: 1px solid #e5e7eb; text-transform: capitalize;">${incident.severity || "low"}</td></tr>
+        <tr><td style="padding: 8px; border: 1px solid #e5e7eb; font-weight: bold;">Status</td><td style="padding: 8px; border: 1px solid #e5e7eb; text-transform: capitalize;">${incident.status || "open"}</td></tr>
+        <tr><td style="padding: 8px; border: 1px solid #e5e7eb; font-weight: bold;">Project</td><td style="padding: 8px; border: 1px solid #e5e7eb;">${projectName || "N/A"}</td></tr>
+        <tr><td style="padding: 8px; border: 1px solid #e5e7eb; font-weight: bold;">Leader</td><td style="padding: 8px; border: 1px solid #e5e7eb;">${leaderName || "N/A"}</td></tr>
+        <tr><td style="padding: 8px; border: 1px solid #e5e7eb; font-weight: bold;">Created By</td><td style="padding: 8px; border: 1px solid #e5e7eb;">${createdByName || "N/A"}</td></tr>
+        <tr><td style="padding: 8px; border: 1px solid #e5e7eb; font-weight: bold;">Affected Users</td><td style="padding: 8px; border: 1px solid #e5e7eb;">${incident.affectedUsers ?? 0}</td></tr>
+        <tr><td style="padding: 8px; border: 1px solid #e5e7eb; font-weight: bold;">Affected Services</td><td style="padding: 8px; border: 1px solid #e5e7eb;">${formatList(incident.affectedServices)}</td></tr>
+      </table>
+      <p style="margin: 16px 0;">
+        <a href="${incidentUrl}" style="display: inline-block; background: #111827; color: #ffffff; text-decoration: none; padding: 10px 16px; border-radius: 6px;">
+          View Incident Details
+        </a>
+      </p>
+      <p>If you were not expecting this notification, you can safely ignore this email.</p>
+    </div>
+  `;
+};
+
 // Verify the connection configuration
 transporter.verify((error, success) => {
   if (error) {
@@ -58,4 +96,31 @@ const sendVerificationEmail = async (email, username) => {
   }
 };
 
-export { sendEmail, sendVerificationEmail };
+const sendIncidentNotificationEmail = async ({
+  email,
+  recipientName,
+  actionLabel,
+  incident,
+  projectName,
+  leaderName,
+  createdByName,
+}) => {
+  const incidentUrl = `${config.FRONTEND_URL}/incidents/${incident._id}`;
+  const htmlContent = buildIncidentNotificationHtml({
+    recipientName,
+    actionLabel,
+    incident,
+    projectName,
+    leaderName,
+    createdByName,
+    incidentUrl,
+  });
+
+  return sendEmail(
+    email,
+    `Incido Incident ${actionLabel}: ${incident.title}`,
+    htmlContent,
+  );
+};
+
+export { sendEmail, sendVerificationEmail, sendIncidentNotificationEmail };
