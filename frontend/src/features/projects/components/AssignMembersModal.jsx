@@ -9,6 +9,8 @@ const AssignMembersModal = ({ isOpen, onClose, projectId, existingMembers = [], 
   const [emailInput, setEmailInput] = useState("");
   const [emailError, setEmailError] = useState("");
   const [selectedRole, setSelectedRole] = useState("member");
+  const [allUsers, setAllUsers] = useState([]);
+  const [showDropdown, setShowDropdown] = useState(false);
   
   const [apiError, setApiError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -36,6 +38,15 @@ const AssignMembersModal = ({ isOpen, onClose, projectId, existingMembers = [], 
       setTimeout(() => {
         firstFocusableRef.current?.focus();
       }, 300);
+
+      // Fetch all users for search
+      authService.getAllUsers()
+        .then(res => {
+          if (res.success) {
+            setAllUsers(res.users.filter(u => u.role !== 'admin'));
+          }
+        })
+        .catch(err => console.error("Failed to fetch users", err));
     }
   }, [isOpen]);
 
@@ -101,6 +112,13 @@ const AssignMembersModal = ({ isOpen, onClose, projectId, existingMembers = [], 
   // Filter out emails that are already in the project natively
   const existingEmails = existingMembers.map(m => m.user.email?.toLowerCase());
 
+  const filteredUsers = allUsers.filter(u => 
+    !existingEmails.includes(u.email.toLowerCase()) &&
+    !stagedMembers.some(m => m.email === u.email.toLowerCase()) &&
+    (u.email.toLowerCase().includes(emailInput.trim().toLowerCase()) || 
+     u.username.toLowerCase().includes(emailInput.trim().toLowerCase()))
+  );
+
   // --- Actions ---
 
   const handleStageMember = async () => {
@@ -147,6 +165,10 @@ const AssignMembersModal = ({ isOpen, onClose, projectId, existingMembers = [], 
     if (e.key === "Enter") {
       e.preventDefault();
       handleStageMember();
+      setShowDropdown(false);
+    } else if (e.key === "Escape" && showDropdown) {
+      e.stopPropagation();
+      setShowDropdown(false);
     }
   };
 
@@ -262,22 +284,43 @@ const AssignMembersModal = ({ isOpen, onClose, projectId, existingMembers = [], 
 
           {/* Selection Controls */}
           <div className="flex flex-col gap-4 bg-[var(--bg-base)] p-4 border border-[var(--border-col)]">
-            <div className="w-full">
+            <div className="w-full relative">
               <label className="block mb-1.5 font-mono text-[0.6rem] uppercase tracking-widest text-[var(--text-secondary)]">
-                User Email
+                Search User
               </label>
               <input
-                type="email"
+                type="text"
                 ref={firstFocusableRef}
                 value={emailInput}
                 onChange={(e) => {
                   setEmailInput(e.target.value);
+                  setShowDropdown(true);
                   if (emailError) setEmailError("");
                 }}
+                onFocus={() => setShowDropdown(true)}
+                onBlur={() => setShowDropdown(false)}
                 onKeyDown={handleKeyDown}
-                placeholder="responder@incido.io"
+                placeholder="Search by name or email..."
                 className="w-full h-9 bg-[var(--bg-card)] border border-[var(--border-col)] px-3 font-sans text-[0.85rem] text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors duration-150 appearance-none rounded-none placeholder:text-[var(--text-muted)]"
               />
+              {showDropdown && filteredUsers.length > 0 && (
+                <div className="absolute top-full left-0 mt-1 w-full max-h-48 overflow-y-auto bg-[var(--bg-card)] border border-[var(--border-col)] shadow-xl z-50">
+                  {filteredUsers.map(u => (
+                    <div 
+                      key={u._id || u.email}
+                      className="px-3 py-2 cursor-pointer hover:bg-[var(--bg-base)] flex flex-col border-b border-[var(--border-col)] last:border-b-0"
+                      onMouseDown={(e) => e.preventDefault()} // Prevent blur before onClick
+                      onClick={() => {
+                        setEmailInput(u.email);
+                        setShowDropdown(false);
+                      }}
+                    >
+                      <span className="font-sans text-[0.8rem] font-medium text-[var(--text-primary)]">{u.username}</span>
+                      <span className="font-mono text-[0.6rem] text-[var(--text-muted)]">{u.email}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
               {emailError && (
                 <span className="block mt-1 font-mono text-[0.55rem] uppercase tracking-wider text-[#EF4444]">
                   {emailError}
