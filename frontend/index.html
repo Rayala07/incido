@@ -12,6 +12,19 @@
       href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=DM+Sans:wght@400;500&display=swap"
       rel="stylesheet"
     />
+    <script>
+      // Instantly apply dark mode if previously selected to prevent a flash of unstyled content (FOUC)
+      (function() {
+        try {
+          const stored = localStorage.getItem("theme");
+          if (stored === "dark" || (!stored && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+            document.documentElement.classList.add("dark");
+          } else {
+            document.documentElement.classList.remove("dark");
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
