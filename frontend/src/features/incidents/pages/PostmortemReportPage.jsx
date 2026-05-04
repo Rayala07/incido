@@ -43,21 +43,21 @@ export default function PostmortemReportPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center">
-        <RiLoader4Line className="animate-spin text-white" size={32} />
+      <div className="min-h-screen bg-[var(--bg-base)] flex items-center justify-center">
+        <RiLoader4Line className="animate-spin text-[var(--text-muted)]" size={32} />
       </div>
     );
   }
 
   if (error || !incident || !details) {
     return (
-      <div className="min-h-screen bg-[#0A0A0A] flex flex-col items-center justify-center p-6">
+      <div className="min-h-screen bg-[var(--bg-base)] flex flex-col items-center justify-center p-6">
         <div className="bg-red-500/10 border border-red-500 px-6 py-4 max-w-lg w-full text-center">
           <span className="font-mono text-[0.75rem] text-red-500 uppercase tracking-widest">{error || "Report not found"}</span>
         </div>
         <button
           onClick={() => navigate(`/incidents/${id}`)}
-          className="mt-6 text-white font-mono text-[0.7rem] uppercase tracking-widest border-b border-white hover:text-gray-400 transition-colors"
+          className="mt-6 font-mono text-[0.7rem] uppercase tracking-widest text-[var(--text-muted)] border-b border-[var(--border-col)] hover:text-[var(--text-primary)] transition-colors"
         >
           Return to Incident
         </button>
@@ -88,36 +88,36 @@ export default function PostmortemReportPage() {
         {/* ── HEADER ─────────────────────────────────────────────────────── */}
         <header className="mb-20">
           <div className="flex items-center gap-3 mb-8">
-            <span className="font-mono text-[0.75rem] text-[#3B82F6] uppercase tracking-[0.2em] border border-[#3B82F6]/30 bg-[#3B82F6]/10 px-3 py-1">
+            <span className="font-mono text-[0.75rem] text-[var(--accent)] uppercase tracking-[0.2em] border border-[var(--accent)]/30 bg-[var(--accent-subtle)] px-3 py-1">
               AI POSTMORTEM
             </span>
           </div>
           
-          <h1 className="font-display font-bold text-4xl md:text-5xl lg:text-6xl tracking-tight leading-[1.1] mb-8 text-white">
+          <h1 className="font-display font-bold text-4xl md:text-5xl lg:text-6xl tracking-tight leading-[1.1] mb-8 text-[var(--text-primary)]">
             {incident.title}
           </h1>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pt-8 border-t border-white/10">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pt-8 border-t border-[var(--border-col)]">
             <div>
-              <span className="block font-mono text-[0.65rem] uppercase tracking-widest text-gray-500 mb-2">Severity</span>
+              <span className="block font-mono text-[0.65rem] uppercase tracking-widest text-[var(--text-muted)] mb-2">Severity</span>
               <span className={`font-sans font-medium text-[0.9rem] capitalize ${
-                incident.severity === 'critical' ? 'text-red-400' :
-                incident.severity === 'high' ? 'text-orange-400' : 'text-yellow-400'
+                incident.severity === 'critical' ? 'text-red-500' :
+                incident.severity === 'high' ? 'text-orange-500' : 'text-yellow-500'
               }`}>{incident.severity}</span>
             </div>
             <div>
-              <span className="block font-mono text-[0.65rem] uppercase tracking-widest text-gray-500 mb-2">Resolved At</span>
-              <span className="font-sans font-medium text-[0.9rem] text-gray-200">
+              <span className="block font-mono text-[0.65rem] uppercase tracking-widest text-[var(--text-muted)] mb-2">Resolved At</span>
+              <span className="font-sans font-medium text-[0.9rem] text-[var(--text-primary)]">
                 {incident.resolvedAt ? new Date(incident.resolvedAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : "N/A"}
               </span>
             </div>
             <div>
-              <span className="block font-mono text-[0.65rem] uppercase tracking-widest text-gray-500 mb-2">Lead Responder</span>
-              <span className="font-sans font-medium text-[0.9rem] text-gray-200">{incident.leader?.username || "System"}</span>
+              <span className="block font-mono text-[0.65rem] uppercase tracking-widest text-[var(--text-muted)] mb-2">Lead Responder</span>
+              <span className="font-sans font-medium text-[0.9rem] text-[var(--text-primary)]">{incident.leader?.username || "System"}</span>
             </div>
             <div>
-              <span className="block font-mono text-[0.65rem] uppercase tracking-widest text-gray-500 mb-2">Affected Services</span>
-              <span className="font-sans font-medium text-[0.9rem] text-gray-200">
+              <span className="block font-mono text-[0.65rem] uppercase tracking-widest text-[var(--text-muted)] mb-2">Affected Services</span>
+              <span className="font-sans font-medium text-[0.9rem] text-[var(--text-primary)]">
                 {incident.affectedServices?.length > 0 ? incident.affectedServices.join(", ") : "None specified"}
               </span>
             </div>
@@ -128,48 +128,48 @@ export default function PostmortemReportPage() {
         <div className="flex flex-col gap-12 lg:gap-16 mt-8">
           
           {/* SECTION 1: WHAT HAPPENED */}
-          <section className="border-t border-white/10 pt-8 lg:pt-12">
-            <h2 className="font-mono text-[0.7rem] uppercase tracking-[0.2em] text-[#94A3B8] mb-6">
+          <section className="border-t border-[var(--border-col)] pt-8 lg:pt-12">
+            <h2 className="font-mono text-[0.7rem] uppercase tracking-[0.2em] text-[var(--text-secondary)] mb-6">
               [ 01 ] &nbsp; What Happened
             </h2>
-            <div className="font-sans text-[1rem] md:text-[1.1rem] text-gray-300 leading-relaxed whitespace-pre-wrap">
+            <div className="font-sans text-[1rem] md:text-[1.1rem] text-[var(--text-primary)] leading-relaxed whitespace-pre-wrap">
               {details.whatHappened}
             </div>
           </section>
 
           {/* SECTION 2: WHY IT HAPPENED */}
-          <section className="border-t border-white/10 pt-8 lg:pt-12">
-            <h2 className="font-mono text-[0.7rem] uppercase tracking-[0.2em] text-[#FCA5A5] mb-6">
+          <section className="border-t border-[var(--border-col)] pt-8 lg:pt-12">
+            <h2 className="font-mono text-[0.7rem] uppercase tracking-[0.2em] text-red-500 mb-6">
               [ 02 ] &nbsp; Root Cause Analysis
             </h2>
-            <div className="font-sans text-[1rem] md:text-[1.1rem] text-gray-300 leading-relaxed whitespace-pre-wrap">
+            <div className="font-sans text-[1rem] md:text-[1.1rem] text-[var(--text-primary)] leading-relaxed whitespace-pre-wrap">
               {details.whyItHappened}
             </div>
           </section>
 
           {/* SECTION 3: HOW IT WAS FIXED */}
-          <section className="border-t border-white/10 pt-8 lg:pt-12">
-            <h2 className="font-mono text-[0.7rem] uppercase tracking-[0.2em] text-[#86EFAC] mb-6">
+          <section className="border-t border-[var(--border-col)] pt-8 lg:pt-12">
+            <h2 className="font-mono text-[0.7rem] uppercase tracking-[0.2em] text-green-500 mb-6">
               [ 03 ] &nbsp; Immediate Resolution
             </h2>
-            <div className="font-sans text-[1rem] md:text-[1.1rem] text-gray-300 leading-relaxed whitespace-pre-wrap">
+            <div className="font-sans text-[1rem] md:text-[1.1rem] text-[var(--text-primary)] leading-relaxed whitespace-pre-wrap">
               {details.howItWasFixed}
             </div>
           </section>
 
           {/* SECTION 4: ACTION ITEMS */}
           {details.actionItems && details.actionItems.length > 0 && (
-            <section className="border-t border-white/10 pt-8 lg:pt-12">
-              <h2 className="font-mono text-[0.7rem] uppercase tracking-[0.2em] text-[#FCD34D] mb-8">
+            <section className="border-t border-[var(--border-col)] pt-8 lg:pt-12">
+              <h2 className="font-mono text-[0.7rem] uppercase tracking-[0.2em] text-amber-500 mb-8">
                 [ 04 ] &nbsp; Preventative Action Items
               </h2>
               <div className="flex flex-col gap-3">
                 {details.actionItems.map((item, idx) => (
-                  <div key={idx} className="bg-[#050505] border border-white/10 p-5 md:p-6 flex flex-col md:flex-row items-start md:items-center gap-4 hover:border-white/20 transition-colors">
-                    <div className="shrink-0 px-2 py-1 border border-white/10 bg-white/5">
-                      <span className="font-mono text-[0.65rem] text-[#FCD34D] uppercase tracking-widest">ACT_{(idx + 1).toString().padStart(2, '0')}</span>
+                  <div key={idx} className="bg-[var(--bg-base)] border border-[var(--border-col)] p-5 md:p-6 flex flex-col md:flex-row items-start md:items-center gap-4 hover:border-[var(--accent)] transition-colors">
+                    <div className="shrink-0 px-2 py-1 border border-[var(--border-col)] bg-[var(--accent-subtle)]">
+                      <span className="font-mono text-[0.65rem] text-[var(--accent)] uppercase tracking-widest">ACT_{(idx + 1).toString().padStart(2, '0')}</span>
                     </div>
-                    <p className="font-sans text-[0.95rem] md:text-[1.05rem] text-gray-200 leading-relaxed">
+                    <p className="font-sans text-[0.95rem] md:text-[1.05rem] text-[var(--text-primary)] leading-relaxed">
                       {item.task}
                     </p>
                   </div>

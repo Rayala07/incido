@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
-import { useState, useEffect } from "react";
-import { RiSunLine, RiMoonLine } from "@remixicon/react";
+import { useState, useEffect, useRef } from "react";
+import { RiSunLine, RiMoonLine, RiLogoutBoxLine } from "@remixicon/react";
 import useAuth from "../../features/auth/hooks/useAuth";
 
 const LogoBox = () => (
@@ -11,21 +11,88 @@ const LogoBox = () => (
   </div>
 );
 
+/* ─── Avatar with initials + dropdown logout ─────────────── */
+const UserAvatar = () => {
+  const { user, logout } = useAuth();
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClick = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  if (!user) return null;
+
+  const initials = user.username
+    ? user.username.slice(0, 2).toUpperCase()
+    : "?";
+
+  return (
+    <div ref={ref} className="relative">
+      {/* Avatar circle */}
+      <button
+        onClick={() => setOpen((prev) => !prev)}
+        className="w-8 h-8 rounded-full bg-[var(--accent-subtle)] border border-[var(--accent)] flex items-center justify-center cursor-pointer transition-all hover:border-[var(--accent-hover)] focus:outline-none"
+        aria-label="User menu"
+        aria-expanded={open}
+      >
+        <span className="font-mono text-[0.65rem] font-bold text-[var(--accent)] select-none leading-none">
+          {initials}
+        </span>
+      </button>
+
+      {/* Dropdown */}
+      {open && (
+        <div className="absolute right-0 top-[calc(100%+8px)] w-52 bg-[var(--bg-card)] border border-[var(--border-col)] shadow-lg z-50">
+          {/* User info */}
+          <div className="px-4 py-3 border-b border-[var(--border-col)]">
+            <p className="font-sans font-medium text-[0.85rem] text-[var(--text-primary)] truncate">
+              {user.username}
+            </p>
+            <p className="font-mono text-[0.6rem] uppercase tracking-wider text-[var(--text-muted)] truncate mt-0.5">
+              {user.email}
+            </p>
+            <span className="inline-block mt-1.5 font-mono text-[0.55rem] uppercase tracking-widest text-[var(--accent)] border border-[var(--accent)]/30 bg-[var(--accent-subtle)] px-1.5 py-0.5 leading-none">
+              {user.role}
+            </span>
+          </div>
+
+          {/* Logout */}
+          <button
+            onClick={() => {
+              setOpen(false);
+              logout();
+            }}
+            className="w-full flex items-center gap-3 px-4 py-3 text-left font-mono text-[0.65rem] uppercase tracking-widest text-[var(--text-secondary)] hover:text-red-500 hover:bg-red-500/5 transition-colors cursor-pointer"
+          >
+            <RiLogoutBoxLine size={14} />
+            Log out
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+/* ─── Navbar ─────────────────────────────────────────────── */
 const Navbar = () => {
   const { pathname } = useLocation();
-  const { isAdmin } = useAuth();
   const [isDark, setIsDark] = useState(false);
 
-  // Initialize theme from localStorage or document class
+  // Initialize theme from document class
   useEffect(() => {
-    const isDarkMode = document.documentElement.classList.contains("dark");
-    setIsDark(isDarkMode);
+    setIsDark(document.documentElement.classList.contains("dark"));
   }, []);
 
   const toggleTheme = () => {
-    const newIsDark = !isDark;
-    setIsDark(newIsDark);
-    if (newIsDark) {
+    const next = !isDark;
+    setIsDark(next);
+    if (next) {
       document.documentElement.classList.add("dark");
       localStorage.setItem("theme", "dark");
     } else {
@@ -35,9 +102,7 @@ const Navbar = () => {
   };
 
   const navLink = (to, label) => {
-    // Exact match for dashboard/projects, or prefix match for sub-routes like /incidents/create
     const active = pathname === to || (to !== "/" && pathname.startsWith(to));
-    
     return (
       <Link
         key={to}
@@ -56,7 +121,7 @@ const Navbar = () => {
   return (
     <div className="w-full flex flex-col shrink-0 z-50 relative">
       <div className="w-full h-12 bg-[var(--bg-card)] border-b border-[var(--border-col)] px-6 flex items-center justify-between">
-        
+
         {/* Left: Logo */}
         <div className="flex items-center">
           <LogoBox />
@@ -69,22 +134,17 @@ const Navbar = () => {
           {navLink("/incidents", "Incidents")}
         </div>
 
-        {/* Right: Actions */}
-        <div className="flex items-center gap-6">
-          <button 
+        {/* Right: Theme toggle + Avatar */}
+        <div className="flex items-center gap-4">
+          <button
             onClick={toggleTheme}
             className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors duration-150 p-1 flex items-center justify-center cursor-pointer"
             aria-label="Toggle Theme"
           >
             {isDark ? <RiSunLine size={16} /> : <RiMoonLine size={16} />}
           </button>
-          
-          <Link
-            to="/profile"
-            className="font-mono font-medium text-[11px] uppercase tracking-wider text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors duration-150"
-          >
-            Profile
-          </Link>
+
+          <UserAvatar />
         </div>
       </div>
 
