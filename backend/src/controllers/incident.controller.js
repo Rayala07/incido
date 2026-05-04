@@ -204,6 +204,7 @@ export const createIncident = async (req, res) => {
             actionLabel: "Created",
             incident,
             projectName: project.name,
+            projectDescription: project.description,
             leaderName: leaderUser?.username,
             createdByName: creatorUser?.username,
           }),
@@ -597,6 +598,7 @@ export const assignMembers = async (req, res) => {
             actionLabel: "Assigned",
             incident: updated,
             projectName: updated.projectId?.name,
+            projectDescription: updated.projectId?.description,
             leaderName: updated.leader?.username,
             createdByName: updated.createdBy?.username,
           }),
@@ -987,6 +989,7 @@ export const getIncidentDetails = async (req, res) => {
 };
 
 export const downloadPostmortemPDF = async (req, res) => {
+  let browser = null;
   try {
     const { id: userId, role } = req.user;
     const { id } = req.params;
@@ -1036,34 +1039,92 @@ export const downloadPostmortemPDF = async (req, res) => {
     }
 
     // Generate HTML content
-    const htmlContent = generatePostmortemHTML(incident, details);
+    let htmlContent;
+    try {
+      htmlContent = generatePostmortemHTML(incident, details);
+    } catch (htmlError) {
+      console.error("Error generating HTML template:", htmlError);
+      return res
+        .status(500)
+        .json({ success: false, message: "Error generating postmortem HTML" });
+    }
 
     // Launch puppeteer and generate PDF
-    const browser = await puppeteer.launch({
-      headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    });
+    try {
+      browser = await puppeteer.launch({
+        headless: "new",
+        args: [
+          "--no-sandbox",
+          "--disable-setuid-sandbox",
+          "--disable-dev-shm-usage",
+          "--single-process",
+        ],
+      });
+    } catch (launchError) {
+      console.error("Error launching browser:", launchError);
+      return res
+        .status(500)
+        .json({ success: false, message: "Failed to launch PDF generator" });
+    }
+
     const page = await browser.newPage();
-    await page.setContent(htmlContent, { waitUntil: "networkidle0" });
-    const pdfBuffer = await page.pdf({
-      format: "A4",
-      printBackground: true,
-      margin: {
-        top: "20mm",
-        right: "20mm",
-        bottom: "20mm",
-        left: "20mm",
-      },
-    });
+
+    try {
+      await page.setContent(htmlContent, { waitUntil: "domcontentloaded" });
+    } catch (contentError) {
+      console.error("Error setting page content:", contentError);
+      await browser.close();
+      return res
+        .status(500)
+        .json({
+          success: false,
+          message: "Failed to process postmortem content",
+        });
+    }
+
+    let pdfBuffer;
+    try {
+      pdfBuffer = await page.pdf({
+        format: "A4",
+        printBackground: true,
+        margin: {
+          top: "20mm",
+          right: "20mm",
+          bottom: "20mm",
+          left: "20mm",
+        },
+      });
+    } catch (pdfError) {
+      console.error("Error generating PDF:", pdfError);
+      await browser.close();
+      return res
+        .status(500)
+        .json({ success: false, message: "Failed to generate PDF" });
+    }
+
     await browser.close();
+    browser = null;
 
     // Send PDF as download
-    const filename = `postmortem-${incident.title.replace(/[^a-zA-Z0-9]/g, "-").toLowerCase()}.pdf`;
+    const filename = `postmortem-${incident.title
+      .replace(/[^a-zA-Z0-9]/g, "-")
+      .toLowerCase()}.pdf`;
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
     res.send(pdfBuffer);
   } catch (error) {
-    console.error("Error generating PDF:", error);
+    console.error(
+      "Error in downloadPostmortemPDF:",
+      error.message,
+      error.stack,
+    );
+    if (browser) {
+      try {
+        await browser.close();
+      } catch (closeError) {
+        console.error("Error closing browser:", closeError);
+      }
+    }
     return res
       .status(500)
       .json({ success: false, message: "Internal server error" });
@@ -1086,6 +1147,25 @@ const generatePostmortemHTML = (incident, details) => {
         year: "numeric",
       })
     : "N/A";
+
+  // Sanitize details fields to prevent template errors
+  const safeDetails = {
+    whatHappened: details?.whatHappened || "Not specified",
+    whyItHappened: details?.whyItHappened || "Not specified",
+    howItWasFixed: details?.howItWasFixed || "Not specified",
+    actionItems: Array.isArray(details?.actionItems) ? details.actionItems : [],
+  };
+
+  // Escape HTML special characters
+  const escapeHtml = (text) => {
+    if (!text) return "";
+    return String(text)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  };
 
   return `
 <!DOCTYPE html>
@@ -1262,31 +1342,31 @@ const generatePostmortemHTML = (incident, details) => {
 
     <section class="section">
       <h2 class="section-title">[ 01 ] What Happened</h2>
-      <div class="section-content">${details.whatHappened}</div>
+      <div class="section-content">${escapeHtml(safeDetails.whatHappened)}</div>
     </section>
 
     <section class="section">
       <h2 class="section-title" style="color: #ef4444">[ 02 ] Root Cause Analysis</h2>
-      <div class="section-content">${details.whyItHappened}</div>
+      <div class="section-content">${escapeHtml(safeDetails.whyItHappened)}</div>
     </section>
 
     <section class="section">
       <h2 class="section-title" style="color: #22c55e">[ 03 ] Immediate Resolution</h2>
-      <div class="section-content">${details.howItWasFixed}</div>
+      <div class="section-content">${escapeHtml(safeDetails.howItWasFixed)}</div>
     </section>
 
     ${
-      details.actionItems && details.actionItems.length > 0
+      safeDetails.actionItems && safeDetails.actionItems.length > 0
         ? `
     <section class="section">
       <h2 class="section-title" style="color: #f59e0b">[ 04 ] Preventative Action Items</h2>
       <div class="action-items">
-        ${details.actionItems
+        ${safeDetails.actionItems
           .map(
             (item, idx) => `
           <div class="action-item">
             <div class="action-badge">ACT_${(idx + 1).toString().padStart(2, "0")}</div>
-            <div class="section-content">${item.task}</div>
+            <div class="section-content">${escapeHtml(item?.task || "")}</div>
           </div>
         `,
           )
