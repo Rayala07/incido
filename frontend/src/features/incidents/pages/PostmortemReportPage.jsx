@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { 
-  RiArrowLeftLine, 
-  RiLoader4Line
+import {
+  RiArrowLeftLine,
+  RiLoader4Line,
+  RiDownloadLine,
 } from "@remixicon/react";
 import incidentService from "../services/incidentService";
 
@@ -14,6 +15,7 @@ export default function PostmortemReportPage() {
   const [details, setDetails] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -41,6 +43,32 @@ export default function PostmortemReportPage() {
     }
   };
 
+  const handleDownload = async () => {
+    if (isDownloading) return;
+    setIsDownloading(true);
+    try {
+      const blob = await incidentService.downloadPostmortemPDF(id);
+      const safeName = incident?.title
+        ? incident.title.replace(/[^a-zA-Z0-9]/g, "-").toLowerCase()
+        : id;
+      const filename = `postmortem-${safeName}.pdf`;
+      const url = window.URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = filename;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("PDF download failed:", err);
+      alert("Failed to generate PDF. Please try again.");
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  /* ── Loading ── */
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[var(--bg-base)] flex items-center justify-center">
@@ -49,6 +77,7 @@ export default function PostmortemReportPage() {
     );
   }
 
+  /* ── Error ── */
   if (error || !incident || !details) {
     return (
       <div className="min-h-screen bg-[var(--bg-base)] flex flex-col items-center justify-center p-6">
@@ -57,7 +86,7 @@ export default function PostmortemReportPage() {
         </div>
         <button
           onClick={() => navigate(`/incidents/${id}`)}
-          className="mt-6 font-mono text-[0.7rem] uppercase tracking-widest text-[var(--text-muted)] border-b border-[var(--border-col)] hover:text-[var(--text-primary)] transition-colors"
+          className="mt-6 font-mono text-[0.7rem] uppercase tracking-widest text-[var(--text-muted)] border-b border-[var(--border-col)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
         >
           Return to Incident
         </button>
@@ -65,136 +94,210 @@ export default function PostmortemReportPage() {
     );
   }
 
+  /* ── Helpers ── */
+  const severityColor =
+    incident.severity === "critical" ? "#dc2626" :
+    incident.severity === "high" ? "#ea580c" :
+    incident.severity === "medium" ? "#d97706" : "#2563eb";
+
+  const resolvedDate = incident.resolvedAt
+    ? new Date(incident.resolvedAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
+    : "N/A";
+
+  const createdDate = new Date(incident.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+
   return (
-    <div className="min-h-screen bg-[var(--bg-base)] text-[var(--text-primary)] selection:bg-[var(--accent)] selection:text-[var(--accent-text)] pb-24 font-sans">
-      {/* ── TOP NAV ──────────────────────────────────────────────────────── */}
-      <div className="sticky top-0 z-50 bg-[var(--bg-card)]/90 backdrop-blur-md border-b border-[var(--border-col)] px-6 lg:px-12 py-4 flex items-center justify-between">
+    <div className="min-h-screen bg-[var(--bg-base)] flex flex-col">
+
+      {/* ═══ TOP BAR ═══════════════════════════════════════════════════ */}
+      <div className="sticky top-0 z-50 bg-[var(--bg-card)] border-b border-[var(--border-col)] px-6 lg:px-10 py-4 flex items-center justify-between">
         <button
           onClick={() => navigate(`/incidents/${id}`)}
-          className="flex items-center gap-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors group"
+          className="flex items-center gap-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors group cursor-pointer"
         >
-          <RiArrowLeftLine size={18} className="group-hover:-translate-x-1 transition-transform" />
-          <span className="font-mono text-[0.7rem] uppercase tracking-widest mt-0.5">Back to Incident</span>
+          <RiArrowLeftLine size={16} className="group-hover:-translate-x-1 transition-transform" />
+          <span className="font-mono text-[0.68rem] uppercase tracking-widest">Back to Incident</span>
         </button>
-        <div className="font-display font-bold tracking-widest uppercase text-sm text-[var(--text-muted)]">
-          INCIDO
-        </div>
+
+        <button
+          onClick={handleDownload}
+          disabled={isDownloading}
+          className="flex items-center gap-2 px-5 py-2 border border-[var(--border-col)] text-[var(--text-secondary)] font-mono text-[0.65rem] uppercase tracking-widest hover:border-[var(--text-primary)] hover:text-[var(--text-primary)] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+        >
+          {isDownloading
+            ? <RiLoader4Line size={14} className="animate-spin" />
+            : <RiDownloadLine size={14} />}
+          {isDownloading ? "Generating..." : "Download Report"}
+        </button>
       </div>
 
-      {/* ── A4 DOCUMENT CONTAINER ───────────────────────────────────────── */}
-      <main className="max-w-[850px] mx-auto bg-[var(--bg-card)] border border-[var(--border-col)] shadow-2xl mt-12 lg:mt-16 relative">
-        <div className="px-8 py-12 md:px-16 md:py-20 flex flex-col">
-        
-        {/* ── HEADER ─────────────────────────────────────────────────────── */}
-        <header className="mb-20">
-          <div className="flex items-center gap-3 mb-8">
-            <span className="font-mono text-[0.75rem] text-[var(--accent)] uppercase tracking-[0.2em] border border-[var(--accent)]/30 bg-[var(--accent-subtle)] px-3 py-1">
-              AI POSTMORTEM
-            </span>
-          </div>
-          
-          <h1 className="font-display font-bold text-4xl md:text-5xl lg:text-6xl tracking-tight leading-[1.1] mb-8 text-[var(--text-primary)]">
-            {incident.title}
-          </h1>
+      {/* ═══ VIEWER SHELL ══════════════════════════════════════════════ */}
+      <div className="flex-1 flex justify-center py-10 lg:py-14 px-4">
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pt-8 border-t border-[var(--border-col)]">
-            <div>
-              <span className="block font-mono text-[0.65rem] uppercase tracking-widest text-[var(--text-muted)] mb-2">Severity</span>
-              <span className={`font-sans font-medium text-[0.9rem] capitalize ${
-                incident.severity === 'critical' ? 'text-red-500' :
-                incident.severity === 'high' ? 'text-orange-500' : 'text-yellow-500'
-              }`}>{incident.severity}</span>
-            </div>
-            <div>
-              <span className="block font-mono text-[0.65rem] uppercase tracking-widest text-[var(--text-muted)] mb-2">Resolved At</span>
-              <span className="font-sans font-medium text-[0.9rem] text-[var(--text-primary)]">
-                {incident.resolvedAt ? new Date(incident.resolvedAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : "N/A"}
-              </span>
-            </div>
-            <div>
-              <span className="block font-mono text-[0.65rem] uppercase tracking-widest text-[var(--text-muted)] mb-2">Lead Responder</span>
-              <span className="font-sans font-medium text-[0.9rem] text-[var(--text-primary)]">{incident.leader?.username || "System"}</span>
-            </div>
-            <div>
-              <span className="block font-mono text-[0.65rem] uppercase tracking-widest text-[var(--text-muted)] mb-2">Affected Services</span>
-              <span className="font-sans font-medium text-[0.9rem] text-[var(--text-primary)]">
-                {incident.affectedServices?.length > 0 ? incident.affectedServices.join(", ") : "None specified"}
-              </span>
-            </div>
-          </div>
-        </header>
+        {/* ── PAPER DOCUMENT ────────────────────────────────────────── 
+             Always white bg + dark text — this is a PDF-style document,
+             independent of the app's light/dark mode.
+        ──────────────────────────────────────────────────────────────── */}
+        <div
+          className="w-full max-w-[820px] border shadow-2xl"
+          style={{
+            backgroundColor: "#ffffff",
+            borderColor: "#e5e7eb",
+            color: "#1f2937",
+          }}
+        >
+          <div className="px-10 py-14 md:px-16 md:py-20">
 
-        {/* ── REPORT BODY ────────────────────────────────────────────────── */}
-        <div className="flex flex-col gap-12 lg:gap-16 mt-8">
-          
-          {/* SECTION 1: WHAT HAPPENED */}
-          <section className="border-t border-[var(--border-col)] pt-8 lg:pt-12">
-            <h2 className="font-mono text-[0.7rem] uppercase tracking-[0.2em] text-[var(--text-secondary)] mb-6">
-              [ 01 ] &nbsp; What Happened
-            </h2>
-            <div className="font-sans text-[1rem] md:text-[1.1rem] text-[var(--text-primary)] leading-relaxed whitespace-pre-wrap">
-              {details.whatHappened}
-            </div>
-          </section>
-
-          {/* SECTION 2: WHY IT HAPPENED */}
-          <section className="border-t border-[var(--border-col)] pt-8 lg:pt-12">
-            <h2 className="font-mono text-[0.7rem] uppercase tracking-[0.2em] text-red-500 mb-6">
-              [ 02 ] &nbsp; Root Cause Analysis
-            </h2>
-            <div className="font-sans text-[1rem] md:text-[1.1rem] text-[var(--text-primary)] leading-relaxed whitespace-pre-wrap">
-              {details.whyItHappened}
-            </div>
-          </section>
-
-          {/* SECTION 3: HOW IT WAS FIXED */}
-          <section className="border-t border-[var(--border-col)] pt-8 lg:pt-12">
-            <h2 className="font-mono text-[0.7rem] uppercase tracking-[0.2em] text-green-500 mb-6">
-              [ 03 ] &nbsp; Immediate Resolution
-            </h2>
-            <div className="font-sans text-[1rem] md:text-[1.1rem] text-[var(--text-primary)] leading-relaxed whitespace-pre-wrap">
-              {details.howItWasFixed}
-            </div>
-          </section>
-
-          {/* SECTION 4: ACTION ITEMS */}
-          {details.actionItems && details.actionItems.length > 0 && (
-            <section className="border-t border-[var(--border-col)] pt-8 lg:pt-12">
-              <h2 className="font-mono text-[0.7rem] uppercase tracking-[0.2em] text-amber-500 mb-8">
-                [ 04 ] &nbsp; Preventative Action Items
-              </h2>
-              <div className="flex flex-col gap-3">
-                {details.actionItems.map((item, idx) => (
-                  <div key={idx} className="bg-[var(--bg-base)] border border-[var(--border-col)] p-5 md:p-6 flex flex-col md:flex-row items-start md:items-center gap-4 hover:border-[var(--accent)] transition-colors">
-                    <div className="shrink-0 px-2 py-1 border border-[var(--border-col)] bg-[var(--accent-subtle)]">
-                      <span className="font-mono text-[0.65rem] text-[var(--accent)] uppercase tracking-widest">ACT_{(idx + 1).toString().padStart(2, '0')}</span>
-                    </div>
-                    <p className="font-sans text-[0.95rem] md:text-[1.05rem] text-[var(--text-primary)] leading-relaxed">
-                      {item.task}
-                    </p>
-                  </div>
-                ))}
+            {/* ── DOCUMENT HEADER ── */}
+            <header className="mb-16">
+              {/* Badge */}
+              <div
+                className="inline-block px-3 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.18em] mb-8"
+                style={{ fontFamily: "'IBM Plex Mono', monospace", backgroundColor: "#f3f4f6", color: "#059669", borderRadius: "2px" }}
+              >
+                AI Postmortem Report
               </div>
-            </section>
-          )}
 
-        </div>
+              {/* Title */}
+              <h1
+                className="text-3xl md:text-4xl lg:text-[2.6rem] font-bold leading-[1.15] mb-10"
+                style={{ fontFamily: "'Barlow Condensed', sans-serif", color: "#111827", letterSpacing: "-0.01em" }}
+              >
+                {incident.title}
+              </h1>
 
-        {/* ── FOOTER ─────────────────────────────────────────────────────── */}
-        <footer className="mt-24 pt-10 border-t border-[var(--border-col)] flex flex-col items-center justify-center gap-3 text-center">
-          <div className="w-8 h-8 bg-[var(--text-primary)] text-[var(--bg-base)] flex items-center justify-center rounded-sm rotate-45 mb-2">
-            <span className="font-display font-bold text-lg -rotate-45 block leading-none select-none">/</span>
+              {/* Meta grid */}
+              <div
+                className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-5 pt-6"
+                style={{ borderTop: "1px solid #e5e7eb" }}
+              >
+                <div>
+                  <div className="text-[0.6rem] font-semibold uppercase tracking-[0.15em] mb-1.5" style={{ fontFamily: "'IBM Plex Mono', monospace", color: "#9ca3af" }}>
+                    Severity
+                  </div>
+                  <div className="text-[0.88rem] font-medium capitalize" style={{ fontFamily: "'DM Sans', sans-serif", color: severityColor }}>
+                    {incident.severity}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[0.6rem] font-semibold uppercase tracking-[0.15em] mb-1.5" style={{ fontFamily: "'IBM Plex Mono', monospace", color: "#9ca3af" }}>
+                    Created
+                  </div>
+                  <div className="text-[0.88rem] font-medium" style={{ fontFamily: "'DM Sans', sans-serif", color: "#374151" }}>
+                    {createdDate}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[0.6rem] font-semibold uppercase tracking-[0.15em] mb-1.5" style={{ fontFamily: "'IBM Plex Mono', monospace", color: "#9ca3af" }}>
+                    Resolved
+                  </div>
+                  <div className="text-[0.88rem] font-medium" style={{ fontFamily: "'DM Sans', sans-serif", color: "#374151" }}>
+                    {resolvedDate}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[0.6rem] font-semibold uppercase tracking-[0.15em] mb-1.5" style={{ fontFamily: "'IBM Plex Mono', monospace", color: "#9ca3af" }}>
+                    Lead
+                  </div>
+                  <div className="text-[0.88rem] font-medium" style={{ fontFamily: "'DM Sans', sans-serif", color: "#374151" }}>
+                    {incident.leader?.username || "System"}
+                  </div>
+                </div>
+              </div>
+            </header>
+
+            {/* ── REPORT BODY ── */}
+            <div className="flex flex-col gap-12">
+
+              {/* Section 01 */}
+              <section style={{ borderTop: "1px solid #e5e7eb", paddingTop: "28px" }}>
+                <h2 className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] mb-5" style={{ fontFamily: "'IBM Plex Mono', monospace", color: "#6b7280" }}>
+                  [ 01 ] &nbsp; What Happened
+                </h2>
+                <div className="text-[0.95rem] md:text-[1.05rem] leading-[1.75] whitespace-pre-wrap" style={{ fontFamily: "'DM Sans', sans-serif", color: "#374151" }}>
+                  {details.whatHappened}
+                </div>
+              </section>
+
+              {/* Section 02 */}
+              <section style={{ borderTop: "1px solid #e5e7eb", paddingTop: "28px" }}>
+                <h2 className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] mb-5" style={{ fontFamily: "'IBM Plex Mono', monospace", color: "#dc2626" }}>
+                  [ 02 ] &nbsp; Root Cause Analysis
+                </h2>
+                <div className="text-[0.95rem] md:text-[1.05rem] leading-[1.75] whitespace-pre-wrap" style={{ fontFamily: "'DM Sans', sans-serif", color: "#374151" }}>
+                  {details.whyItHappened}
+                </div>
+              </section>
+
+              {/* Section 03 */}
+              <section style={{ borderTop: "1px solid #e5e7eb", paddingTop: "28px" }}>
+                <h2 className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] mb-5" style={{ fontFamily: "'IBM Plex Mono', monospace", color: "#16a34a" }}>
+                  [ 03 ] &nbsp; Immediate Resolution
+                </h2>
+                <div className="text-[0.95rem] md:text-[1.05rem] leading-[1.75] whitespace-pre-wrap" style={{ fontFamily: "'DM Sans', sans-serif", color: "#374151" }}>
+                  {details.howItWasFixed}
+                </div>
+              </section>
+
+              {/* Section 04 – Action Items */}
+              {details.actionItems && details.actionItems.length > 0 && (
+                <section style={{ borderTop: "1px solid #e5e7eb", paddingTop: "28px" }}>
+                  <h2 className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] mb-6" style={{ fontFamily: "'IBM Plex Mono', monospace", color: "#d97706" }}>
+                    [ 04 ] &nbsp; Preventative Action Items
+                  </h2>
+                  <div className="flex flex-col gap-3">
+                    {details.actionItems.map((item, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-start gap-4 p-5"
+                        style={{ backgroundColor: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: "4px" }}
+                      >
+                        <div
+                          className="shrink-0 px-2 py-0.5 text-[0.6rem] font-semibold uppercase tracking-[0.12em]"
+                          style={{ fontFamily: "'IBM Plex Mono', monospace", backgroundColor: "#f3f4f6", color: "#059669", border: "1px solid #e5e7eb", borderRadius: "2px" }}
+                        >
+                          ACT_{(idx + 1).toString().padStart(2, "0")}
+                        </div>
+                        <p className="text-[0.92rem] leading-[1.7]" style={{ fontFamily: "'DM Sans', sans-serif", color: "#374151" }}>
+                          {item.task}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {/* Affected Services */}
+              {incident.affectedServices && incident.affectedServices.length > 0 && (
+                <section style={{ borderTop: "1px solid #e5e7eb", paddingTop: "28px" }}>
+                  <h2 className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] mb-5" style={{ fontFamily: "'IBM Plex Mono', monospace", color: "#6b7280" }}>
+                    Affected Services
+                  </h2>
+                  <div className="flex flex-wrap gap-2">
+                    {incident.affectedServices.map((svc, i) => (
+                      <span
+                        key={i}
+                        className="px-3 py-1 text-[0.72rem] font-medium"
+                        style={{ fontFamily: "'DM Sans', sans-serif", backgroundColor: "#f3f4f6", color: "#374151", border: "1px solid #e5e7eb", borderRadius: "2px" }}
+                      >
+                        {svc}
+                      </span>
+                    ))}
+                  </div>
+                </section>
+              )}
+            </div>
+
+            {/* ── DOCUMENT FOOTER ── */}
+            <footer className="mt-20 pt-6 text-center" style={{ borderTop: "1px solid #e5e7eb" }}>
+              <p className="text-[0.62rem] font-medium uppercase tracking-[0.3em]" style={{ fontFamily: "'IBM Plex Mono', monospace", color: "#9ca3af" }}>
+                Analyzed &amp; Synthesized by INCIDO-AI
+              </p>
+            </footer>
+
           </div>
-          <p className="font-mono text-[0.7rem] uppercase tracking-[0.25em] text-[var(--text-muted)]">
-            Synthesized & Analyzed by
-          </p>
-          <p className="font-display font-bold text-xl text-[var(--text-primary)] tracking-widest">
-            INCIDO
-          </p>
-        </footer>
-
         </div>
-      </main>
+      </div>
     </div>
   );
 }
