@@ -1,5 +1,5 @@
-import mongoose from "mongoose";
-import bcrypt from "bcryptjs";
+import mongoose from "mongoose"
+import bcrypt from "bcryptjs"
 
 const userSchema = new mongoose.Schema(
   {
@@ -16,7 +16,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       select: false, // Exclude password from query results by default
       required: function () {
-        return this.usertype === "local"; // Password is required only for local users
+        return this.usertype === "local" // Password is required only for local users
       },
     },
     profile: {
@@ -46,29 +46,46 @@ const userSchema = new mongoose.Schema(
     },
   },
   { timestamps: true },
-);
+)
 
 // Pre-save middleware to hash password
 userSchema.pre("save", async function () {
   // Only hash the password if it has been modified (or is new)
   if (!this.isModified("password")) {
-    return;
+    return
   }
   try {
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
+    const salt = await bcrypt.genSalt(10)
+    this.password = await bcrypt.hash(this.password, salt)
   } catch (error) {
-    console.log(error);
+    console.error("Error hashing password:", error)
   }
-});
+})
 
 // Method to compare password during login
 userSchema.methods.comparePassword = async function (enteredPassword) {
   // Guard: OAuth users have no stored password
   if (!this.password) return false;
-  return await bcrypt.compare(enteredPassword, this.password);
-};
+  return await bcrypt.compare(enteredPassword, this.password)
+}
 
-const userModel = mongoose.model("user", userSchema);
+// Remove sensitive fields when converting to JSON / Object
+userSchema.set("toJSON", {
+  transform: function (doc, ret, options) {
+    delete ret.password
+    delete ret.__v
+    return ret
+  },
+})
 
-export default userModel;
+userSchema.set("toObject", {
+  transform: function (doc, ret, options) {
+    delete ret.password
+    delete ret.__v
+    return ret
+  },
+})
+
+const userModel = mongoose.model("user", userSchema)
+
+export default userModel
