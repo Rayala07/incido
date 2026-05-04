@@ -22,6 +22,7 @@ const buildIncidentNotificationHtml = ({
   actionLabel,
   incident,
   projectName,
+  projectDescription,
   leaderName,
   createdByName,
   incidentUrl,
@@ -37,6 +38,7 @@ const buildIncidentNotificationHtml = ({
         <tr><td style="padding: 8px; border: 1px solid #e5e7eb; font-weight: bold;">Severity</td><td style="padding: 8px; border: 1px solid #e5e7eb; text-transform: capitalize;">${incident.severity || "low"}</td></tr>
         <tr><td style="padding: 8px; border: 1px solid #e5e7eb; font-weight: bold;">Status</td><td style="padding: 8px; border: 1px solid #e5e7eb; text-transform: capitalize;">${incident.status || "open"}</td></tr>
         <tr><td style="padding: 8px; border: 1px solid #e5e7eb; font-weight: bold;">Project</td><td style="padding: 8px; border: 1px solid #e5e7eb;">${projectName || "N/A"}</td></tr>
+        <tr><td style="padding: 8px; border: 1px solid #e5e7eb; font-weight: bold;">Project Description</td><td style="padding: 8px; border: 1px solid #e5e7eb;">${projectDescription || "N/A"}</td></tr>
         <tr><td style="padding: 8px; border: 1px solid #e5e7eb; font-weight: bold;">Leader</td><td style="padding: 8px; border: 1px solid #e5e7eb;">${leaderName || "N/A"}</td></tr>
         <tr><td style="padding: 8px; border: 1px solid #e5e7eb; font-weight: bold;">Created By</td><td style="padding: 8px; border: 1px solid #e5e7eb;">${createdByName || "N/A"}</td></tr>
         <tr><td style="padding: 8px; border: 1px solid #e5e7eb; font-weight: bold;">Affected Users</td><td style="padding: 8px; border: 1px solid #e5e7eb;">${incident.affectedUsers ?? 0}</td></tr>
@@ -104,6 +106,7 @@ const sendIncidentNotificationEmail = async ({
   actionLabel,
   incident,
   projectName,
+  projectDescription,
   leaderName,
   createdByName,
 }) => {
@@ -113,6 +116,7 @@ const sendIncidentNotificationEmail = async ({
     actionLabel,
     incident,
     projectName,
+    projectDescription,
     leaderName,
     createdByName,
     incidentUrl,
