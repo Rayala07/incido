@@ -5,14 +5,8 @@ import '../../../app/app.css'
 // ── Shared sub-components ─────────────────────────────────
 
 const LogoBox = ({ light = false }) => (
-  <div className={`inline-flex items-center justify-center w-20 h-8 border border-dashed rounded-[2px] shrink-0`} style={{
-    borderColor: light ? 'rgba(232, 240, 255, 0.35)' : 'var(--border-col)'
-  }}>
-    <span className={`font-mono text-[9px] uppercase tracking-[0.1em]`} style={{
-      color: light ? 'rgba(232, 240, 255, 0.50)' : 'var(--text-muted)'
-    }}>
-      [Logo]
-    </span>
+  <div className="inline-flex items-center justify-center h-8 shrink-0">
+    <img src="/app_logo.png" alt="Incido Logo" className={`h-full w-auto object-contain ${light ? 'opacity-80' : ''}`} />
   </div>
 )
 
