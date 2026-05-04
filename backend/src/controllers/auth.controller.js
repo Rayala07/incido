@@ -370,19 +370,18 @@ export const googleCallback = async (req, res) => {
       })
       console.log(`✓ New user created: ${email} with role: ${userRole}`)
 
-      try {
-        const welcomeHtml = `
-          <h2>Welcome to Incido, ${displayName}!</h2>
-          <p>Your account has been created successfully via Google sign-in.</p>
-          <p>You can now access your dashboard and incidents directly.</p>
-          <p><a href="${FRONTEND_URL}/dashboard">Go to Dashboard</a></p>
-        `
+      const welcomeHtml = `
+        <h2>Welcome to Incido, ${displayName}!</h2>
+        <p>Your account has been created successfully via Google sign-in.</p>
+        <p>You can now access your dashboard and incidents directly.</p>
+        <p><a href="${FRONTEND_URL}/dashboard">Go to Dashboard</a></p>
+      `
 
-        await sendEmail(email, "Welcome to Incido", welcomeHtml)
+      sendEmail(email, "Welcome to Incido", welcomeHtml).then(() => {
         console.log(`✓ Welcome email sent to: ${email}`)
-      } catch (emailError) {
+      }).catch((emailError) => {
         console.error("Failed to send Google welcome email:", emailError)
-      }
+      })
     } else {
       console.log(`✓ Existing user logged in: ${email} (role: ${user.role})`)
     }
