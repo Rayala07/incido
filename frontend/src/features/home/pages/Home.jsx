@@ -340,10 +340,8 @@ const FooterStrip = () => {
     <footer className="bg-[var(--bg-base)] border-t border-[var(--border-col)] py-8 px-6">
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="inline-flex items-center justify-center w-16 h-7 border border-dashed border-[var(--border-col)] rounded-none shrink-0">
-            <span className="font-mono text-[9px] uppercase tracking-[0.1em] text-[var(--text-muted)]">
-              [Logo]
-            </span>
+          <div className="inline-flex items-center justify-center h-7 shrink-0">
+            <img src="/app_logo.png" alt="Incido Logo" className="h-full w-auto object-contain" />
           </div>
           <span className="font-mono text-[0.65rem] text-[var(--text-primary)] uppercase tracking-widest font-bold">
             Incido

@@ -4,10 +4,8 @@ import { RiSunLine, RiMoonLine, RiLogoutBoxLine } from "@remixicon/react";
 import useAuth from "../../features/auth/hooks/useAuth";
 
 const LogoBox = () => (
-  <div className="inline-flex items-center justify-center w-20 h-8 border border-dashed border-[var(--border-col)] rounded-[2px] shrink-0">
-    <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-muted)]">
-      [Logo]
-    </span>
+  <div className="inline-flex items-center justify-center h-8 shrink-0">
+    <img src="/app_logo.png" alt="Incido Logo" className="h-full w-auto object-contain" />
   </div>
 );
 

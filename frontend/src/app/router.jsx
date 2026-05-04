@@ -11,6 +11,7 @@ import RegisterPage       from "../features/auth/pages/RegisterPage";
 import AuthLayout         from "../features/auth/components/AuthLayout";
 import DashboardPage      from "../features/dashboard/pages/DashboardPage";
 import CreateIncidentPage from "../features/incidents/pages/CreateIncidentPage";
+import IncidentListPage   from "../features/incidents/pages/IncidentListPage";
 import ProjectsPage       from "../features/projects/pages/ProjectsPage";
 import ProjectDetailsPage from "../features/projects/pages/ProjectDetailsPage";
 import IncidentDetailsPage from "../features/incidents/pages/IncidentDetailsPage";
@@ -55,6 +56,7 @@ export const router = createBrowserRouter([
     element: <ProtectedRoute />,
     children: [
       { path: "/dashboard",                  element: <DashboardPage /> },
+      { path: "/incidents",                  element: <IncidentListPage /> },
       { path: "/projects",                   element: <ProjectsPage /> },
       { path: "/projects/:projectId",        element: <ProjectDetailsPage /> },
       { path: "/incidents/create",           element: <CreateIncidentPage /> },
