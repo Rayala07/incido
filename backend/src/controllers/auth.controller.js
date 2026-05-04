@@ -10,12 +10,19 @@ const generateToken = (user) => {
   })
 }
 
-const getAuthCookieOptions = () => ({
-  httpOnly: true,
-  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-  secure: process.env.NODE_ENV === "production",
-  path: "/",
-})
+const getAuthCookieOptions = () => {
+  const isProduction = 
+    process.env.NODE_ENV === "production" || 
+    config.BASE_URL.includes("onrender") || 
+    config.FRONTEND_URL.includes("vercel");
+
+  return {
+    httpOnly: true,
+    sameSite: isProduction ? "none" : "lax",
+    secure: isProduction,
+    path: "/",
+  }
+}
 
 // register user
 // route: POST /api/auth/register
@@ -36,32 +43,23 @@ export const register = async (req, res) => {
     // Only allow 'responder' or 'admin' at registration — never 'leader' (project-scoped)
     const safeRole = role === "admin" ? "admin" : "responder";
 
-    // Create new user with isVerified set to false
+    // Create new user with isVerified set to true to prevent lockout if email fails
     const user = await userModel.create({
       username,
       email,
       password,
       role: safeRole,
-      isVerified: false,
+      isVerified: true,
       profile: `${config.BASE_URL}/assets/no_profile.jpg`,
     })
 
-    // Send verification email
-    try {
-      await sendVerificationEmail(email, username)
-    } catch (emailError) {
+    // Attempt to send verification email without blocking the request
+    sendVerificationEmail(email, username).catch((emailError) => {
       console.error("Failed to send verification email:", emailError)
-      await userModel.deleteOne({ _id: user._id })
-      return res.status(500).json({
-        message:
-          "Failed to send verification email. Please try registering again.",
-        success: false,
-      })
-    }
+    })
 
     res.status(201).json({
-      message:
-        "User registered successfully. Please check your email to verify your account.",
+      message: "User registered successfully.",
       success: true,
       user: {
         id: user._id,
@@ -372,19 +370,18 @@ export const googleCallback = async (req, res) => {
       })
       console.log(`✓ New user created: ${email} with role: ${userRole}`)
 
-      try {
-        const welcomeHtml = `
-          <h2>Welcome to Incido, ${displayName}!</h2>
-          <p>Your account has been created successfully via Google sign-in.</p>
-          <p>You can now access your dashboard and incidents directly.</p>
-          <p><a href="${FRONTEND_URL}/dashboard">Go to Dashboard</a></p>
-        `
+      const welcomeHtml = `
+        <h2>Welcome to Incido, ${displayName}!</h2>
+        <p>Your account has been created successfully via Google sign-in.</p>
+        <p>You can now access your dashboard and incidents directly.</p>
+        <p><a href="${FRONTEND_URL}/dashboard">Go to Dashboard</a></p>
+      `
 
-        await sendEmail(email, "Welcome to Incido", welcomeHtml)
+      sendEmail(email, "Welcome to Incido", welcomeHtml).then(() => {
         console.log(`✓ Welcome email sent to: ${email}`)
-      } catch (emailError) {
+      }).catch((emailError) => {
         console.error("Failed to send Google welcome email:", emailError)
-      }
+      })
     } else {
       console.log(`✓ Existing user logged in: ${email} (role: ${user.role})`)
     }

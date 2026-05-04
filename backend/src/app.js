@@ -63,6 +63,11 @@ app.use(express.json())
 app.use(cookieParser())
 
 // Session middleware for storing user role during OAuth flow
+const isProductionSession = 
+  process.env.NODE_ENV === "production" || 
+  config.BASE_URL.includes("onrender") || 
+  config.FRONTEND_URL.includes("vercel");
+
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "incident-rag-session-secret",
@@ -73,8 +78,8 @@ app.use(
       collectionName: "sessions",
     }),
     cookie: {
-      secure: process.env.NODE_ENV === "production", // Must be true for sameSite: 'none'
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // 'none' for cross-domain in prod
+      secure: isProductionSession, 
+      sameSite: isProductionSession ? "none" : "lax", 
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
     },
   }),
