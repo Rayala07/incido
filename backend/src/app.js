@@ -31,12 +31,31 @@ app.use(morgan("dev"))
 app.use(
   helmet({
     crossOriginResourcePolicy: false,
+    crossOriginOpenerPolicy: false,
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", "data:", "https:"],
+        connectSrc: [
+          "'self'",
+          "https://incido-green.vercel.app",
+          "https://incido.onrender.com",
+        ],
+      },
+    },
     permissionsPolicy: {
       features: {
         camera: ["'none'"],
         microphone: ["'none'"],
         geolocation: ["'none'"],
       },
+    },
+    hsts: {
+      maxAge: 31536000,
+      includeSubDomains: true,
+      preload: true,
     },
   }),
 )
