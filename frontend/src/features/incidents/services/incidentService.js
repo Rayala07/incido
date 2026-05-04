@@ -108,6 +108,18 @@ const downloadPostmortemPDF = async (id) => {
 };
 
 /**
+ * Fetch all open action items for resolved incidents the user can see.
+ * The backend scopes results by role (admin = all, leader/responder = their scope).
+ * Each item is enriched with: incidentId, incidentTitle, incidentSeverity, projectName.
+ *
+ * Returns: { success, count, actionItems: ActionItem[] }
+ */
+const getActionItems = async () => {
+  const { data } = await axiosInstance.get("/api/incident/action-items");
+  return data;
+};
+
+/**
  * Search for past incidents similar to the given query string.
  * Uses the RAG pipeline on the backend (Pinecone vector search + AI explanation).
  *
@@ -131,6 +143,7 @@ const incidentService = {
   getIncidentDetails,
   closeIncident,
   downloadPostmortemPDF,
+  getActionItems,
   searchSimilarIncidents,
 };
 

@@ -73,6 +73,25 @@ body {
   font-family: 'DM Sans', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  cursor: default;
+  /* Hides the blinking caret from appearing on the page background or static text */
+  caret-color: transparent;
+}
+
+/* Re-enable caret for interactive text fields only */
+input, textarea, [contenteditable="true"] {
+  caret-color: auto;
+  cursor: text;
+}
+
+/* Show text cursor over actual content for better UX, but without the blinking caret */
+p, span, h1, h2, h3, h4, h5, h6, li, code, pre {
+  cursor: text;
+}
+
+/* Ensure interactive elements always show the pointer */
+button, a, [role="button"], .cursor-pointer {
+  cursor: pointer;
 }
 
 /* ─────────────────────────────────────────────────────────

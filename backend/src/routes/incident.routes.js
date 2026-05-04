@@ -13,6 +13,7 @@ import {
   getTimeline,
   addTimelineEntry,
   getIncidentDetails,
+  getActionItems,
   downloadPostmortemPDF,
 } from "../controllers/incident.controller.js"
 import {
@@ -31,6 +32,7 @@ incidentRoutes.post("/create", verifyUser, incidentValidator, createIncident)
 incidentRoutes.get("/allincidents", verifyUser, getAllIncidents)
 incidentRoutes.get("/search", verifyUser, searchSimilarIncidents)
 incidentRoutes.get("/rag/status", verifyUser, getRagStatus)
+incidentRoutes.get("/action-items", verifyUser, getActionItems)
 incidentRoutes.get("/:id", verifyUser, getIncident)
 incidentRoutes.get("/:id/timeline", verifyUser, getTimeline)
 incidentRoutes.post("/:id/timeline", verifyUser, addTimelineEntry)
