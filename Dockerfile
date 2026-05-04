@@ -1,7 +1,7 @@
 # Multi-stage build for monorepo (Railway expects Dockerfile at repo root)
 
 # Stage 1: Build frontend
-FROM node:18-alpine AS frontend-builder
+FROM node:20-alpine AS frontend-builder
 WORKDIR /app/frontend
 COPY frontend/package*.json ./
 RUN npm install
@@ -9,13 +9,13 @@ COPY frontend/ .
 RUN npm run build
 
 # Stage 2: Build backend
-FROM node:18-alpine AS backend-builder
+FROM node:20-alpine AS backend-builder
 WORKDIR /app/backend
 COPY backend/package*.json ./
 RUN npm ci --omit=dev --legacy-peer-deps
 
 # Stage 3: Runtime with Nginx + Backend
-FROM node:18-alpine
+FROM node:20-alpine
 WORKDIR /app
 
 # Install Nginx
@@ -28,8 +28,8 @@ COPY --from=frontend-builder /app/frontend/dist /usr/share/nginx/html
 COPY --from=backend-builder /app/backend/node_modules ./backend/node_modules
 COPY backend/ ./backend/
 
-# Copy Nginx config
-COPY nginx/nginx.prod.conf /etc/nginx/conf.d/default.conf
+# Copy Nginx config (Alpine nginx loads /etc/nginx/http.d/*.conf)
+COPY nginx/nginx.prod.conf /etc/nginx/http.d/default.conf
 
 # Copy startup script
 COPY entrypoint.sh /entrypoint.sh
