@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken"
 import userModel from "../models/user.model.js"
 import { config } from "../config/config.js"
-import { sendVerificationEmail } from "../services/mail.service.js"
+import { sendEmail, sendVerificationEmail } from "../services/mail.service.js"
 
 //generat tokens function
 const generateToken = (user) => {
@@ -229,12 +229,10 @@ export const verifyEmailForAssignment = async (req, res) => {
     }
 
     if (user.role === "admin") {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "Admins cannot be assigned to projects",
-        })
+      return res.status(400).json({
+        success: false,
+        message: "Admins cannot be assigned to projects",
+      })
     }
 
     return res.status(200).json({
@@ -286,12 +284,10 @@ export const verifyResponderEmail = async (req, res) => {
     }
 
     if (user.role === "admin") {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "Admins cannot be assigned as responders",
-        })
+      return res.status(400).json({
+        success: false,
+        message: "Admins cannot be assigned as responders",
+      })
     }
 
     // Import project model inline to avoid circular dependency at module level
@@ -356,6 +352,20 @@ export const googleCallback = async (req, res) => {
         isVerified: true,
       })
       console.log(`✓ New user created: ${email} with role: ${userRole}`)
+
+      try {
+        const welcomeHtml = `
+          <h2>Welcome to Incido, ${displayName}!</h2>
+          <p>Your account has been created successfully via Google sign-in.</p>
+          <p>You can now access your dashboard and incidents directly.</p>
+          <p><a href="${FRONTEND_URL}/dashboard">Go to Dashboard</a></p>
+        `
+
+        await sendEmail(email, "Welcome to Incido", welcomeHtml)
+        console.log(`✓ Welcome email sent to: ${email}`)
+      } catch (emailError) {
+        console.error("Failed to send Google welcome email:", emailError)
+      }
     } else {
       console.log(`✓ Existing user logged in: ${email} (role: ${user.role})`)
     }
