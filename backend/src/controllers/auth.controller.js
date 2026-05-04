@@ -10,12 +10,19 @@ const generateToken = (user) => {
   })
 }
 
-const getAuthCookieOptions = () => ({
-  httpOnly: true,
-  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-  secure: process.env.NODE_ENV === "production",
-  path: "/",
-})
+const getAuthCookieOptions = () => {
+  const isProduction = 
+    process.env.NODE_ENV === "production" || 
+    config.BASE_URL.includes("onrender") || 
+    config.FRONTEND_URL.includes("vercel");
+
+  return {
+    httpOnly: true,
+    sameSite: isProduction ? "none" : "lax",
+    secure: isProduction,
+    path: "/",
+  }
+}
 
 // register user
 // route: POST /api/auth/register
