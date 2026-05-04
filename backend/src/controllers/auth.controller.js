@@ -43,13 +43,13 @@ export const register = async (req, res) => {
     // Only allow 'responder' or 'admin' at registration — never 'leader' (project-scoped)
     const safeRole = role === "admin" ? "admin" : "responder";
 
-    // Create new user with isVerified set to true to prevent lockout if email fails
+    // Create new user requiring email verification
     const user = await userModel.create({
       username,
       email,
       password,
       role: safeRole,
-      isVerified: true,
+      isVerified: false,
       profile: `${config.BASE_URL}/assets/no_profile.jpg`,
     })
 

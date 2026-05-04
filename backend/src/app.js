@@ -108,3 +108,5 @@ app.use("/api/incident", incidentRoutes)
 app.use("/api/project", projectRoutes)
 
 export default app
+
+// Trigger nodemon restart
