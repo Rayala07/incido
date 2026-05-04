@@ -196,7 +196,8 @@ export const createIncident = async (req, res) => {
         .find({ _id: { $in: notificationRecipients } })
         .select("username email");
 
-      await Promise.allSettled(
+      // Send emails in the background without blocking the response
+      Promise.allSettled(
         recipientUsers.map((recipient) =>
           sendIncidentNotificationEmail({
             email: recipient.email,
@@ -209,7 +210,7 @@ export const createIncident = async (req, res) => {
             createdByName: creatorUser?.username,
           }),
         ),
-      );
+      ).catch((err) => console.error("Error in background email dispatch:", err));
     }
 
     let pineconeSynced = true;
@@ -590,7 +591,8 @@ export const assignMembers = async (req, res) => {
         .find({ _id: { $in: newlyAddedMemberIds } })
         .select("username email");
 
-      await Promise.allSettled(
+      // Send emails in the background without blocking the response
+      Promise.allSettled(
         newMemberUsers.map((recipient) =>
           sendIncidentNotificationEmail({
             email: recipient.email,
@@ -603,7 +605,7 @@ export const assignMembers = async (req, res) => {
             createdByName: updated.createdBy?.username,
           }),
         ),
-      );
+      ).catch((err) => console.error("Error in background email dispatch:", err));
     }
 
     return res.status(200).json({
