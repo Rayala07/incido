@@ -1,4 +1,4 @@
-# Multi-stage build for Railway monorepo
+# Multi-stage build for monorepo (Railway expects Dockerfile at repo root)
 
 # Stage 1: Build frontend
 FROM node:18-alpine AS frontend-builder
