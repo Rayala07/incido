@@ -110,7 +110,7 @@ const AssignMembersModal = ({ isOpen, onClose, projectId, existingMembers = [], 
   if (!isOpen) return null;
 
   // Filter out emails that are already in the project natively
-  const existingEmails = existingMembers.map(m => m.user.email?.toLowerCase());
+  const existingEmails = existingMembers.map(m => m.user?.email?.toLowerCase()).filter(Boolean);
 
   const filteredUsers = allUsers.filter(u => 
     !existingEmails.includes(u.email.toLowerCase()) &&
