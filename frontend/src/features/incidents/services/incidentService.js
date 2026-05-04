@@ -120,6 +120,14 @@ const getActionItems = async () => {
 };
 
 /**
+ * Resolve an action item
+ */
+const resolveActionItem = async (incidentId, itemId) => {
+  const { data } = await axiosInstance.patch(`/api/incident/${incidentId}/action-items/${itemId}/resolve`);
+  return data;
+};
+
+/**
  * Search for past incidents similar to the given query string.
  * Uses the RAG pipeline on the backend (Pinecone vector search + AI explanation).
  *
@@ -144,6 +152,7 @@ const incidentService = {
   closeIncident,
   downloadPostmortemPDF,
   getActionItems,
+  resolveActionItem,
   searchSimilarIncidents,
 };
 

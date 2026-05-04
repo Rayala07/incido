@@ -450,6 +450,62 @@ export const getActionItems = async (req, res) => {
   }
 };
 
+/* ──────────────────────────────────────────────────────────────────
+   resolveActionItem
+   Marks a specific action item within an incident's postmortem as "done".
+────────────────────────────────────────────────────────────────── */
+export const resolveActionItem = async (req, res) => {
+  try {
+    const { id: userId, role } = req.user;
+    const { id: incidentId, itemId } = req.params;
+
+    // Ensure the incident exists
+    const incident = await incidentModel.findById(incidentId);
+    if (!incident) {
+      return res.status(404).json({ success: false, message: "Incident not found" });
+    }
+
+    // Basic authorization check (admin or involved in incident)
+    const isAuthorized =
+      role === "admin" ||
+      incident.createdBy?.toString() === userId ||
+      incident.leader?.toString() === userId ||
+      incident.members?.some((m) => m.toString() === userId);
+
+    if (!isAuthorized) {
+      // As a fallback, check project membership
+      const project = await projectModel.findById(incident.projectId).select("members");
+      const isProjectMember = project?.members.some(
+        (m) => m.user.toString() === userId
+      );
+      if (!isProjectMember && !incident.isPublic) {
+        return res.status(403).json({ success: false, message: "Unauthorized" });
+      }
+    }
+
+    // Find the incident details document
+    const details = await incidentDetailsModel.findOne({ incidentId });
+    if (!details) {
+      return res.status(404).json({ success: false, message: "Action items not found for this incident" });
+    }
+
+    // Find the specific action item
+    const item = details.actionItems.id(itemId);
+    if (!item) {
+      return res.status(404).json({ success: false, message: "Action item not found" });
+    }
+
+    // Mark as done
+    item.status = "done";
+    await details.save();
+
+    return res.status(200).json({ success: true, message: "Action item resolved", item });
+  } catch (error) {
+    console.error("Error resolving action item:", error);
+    return res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
 export const closeIncident = async (req, res) => {
   try {
     const { id: userId } = req.user;

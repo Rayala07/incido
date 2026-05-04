@@ -73,6 +73,128 @@ const EmptyState = ({ message }) => (
   </div>
 );
 
+/* ─── ActionItemCard ───────────────────────────────────────── */
+const ActionItemCard = ({ item, onResolved }) => {
+  const [confirmState, setConfirmState] = useState("idle"); // idle | confirming | resolving
+
+  const handleResolveClick = () => {
+    if (confirmState === "idle") {
+      setConfirmState("confirming");
+      setTimeout(() => {
+        setConfirmState((prev) => (prev === "confirming" ? "idle" : prev));
+      }, 5000);
+    } else if (confirmState === "confirming") {
+      resolveItem();
+    }
+  };
+
+  const resolveItem = async () => {
+    setConfirmState("resolving");
+    try {
+      const res = await incidentService.resolveActionItem(item.incidentId, item._id);
+      if (res.success) {
+        onResolved(item._id);
+      } else {
+        setConfirmState("idle");
+      }
+    } catch (error) {
+      console.error("Failed to resolve action item:", error);
+      setConfirmState("idle");
+    }
+  };
+
+  // Mock IDs to match the reference UI style
+  const shortActId = `ACT_${item._id.slice(-3).toUpperCase()}`;
+  const shortIncId = `INC_${item.incidentId.slice(-3).toUpperCase()}`;
+
+  // Severity specific colors for the left bar and badge
+  const isCritical = item.incidentSeverity === "critical" || item.incidentSeverity === "high";
+  const barColor = isCritical ? "bg-[#EF4444]" : "bg-[#EAB308]";
+  const badgeColor = isCritical 
+    ? "bg-[rgba(239,68,68,0.15)] text-[#EF4444] border-[rgba(239,68,68,0.3)]" 
+    : "bg-[rgba(234,179,8,0.15)] text-[#EAB308] border-[rgba(234,179,8,0.3)]";
+
+  return (
+    <div className="relative bg-[var(--bg-card)] border border-[var(--border-col)] rounded-md flex flex-col group overflow-hidden">
+      {/* Left thick colored bar */}
+      <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${barColor}`} />
+
+      <div className="p-4 pl-6 flex flex-col md:flex-row md:items-start justify-between gap-4">
+        
+        {/* Left Content */}
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <span className={`px-2 py-0.5 font-mono text-[0.65rem] uppercase tracking-wider border rounded-[3px] ${badgeColor}`}>
+              {shortActId}
+            </span>
+            <h4 className="font-sans font-bold text-[1.05rem] text-[var(--text-primary)] leading-tight">
+              {item.task}
+            </h4>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 md:gap-3">
+            {/* Mock overdue/added */}
+            <div className="flex items-center gap-1.5 text-[#EF4444] font-sans font-medium text-[0.75rem]">
+              <div className="w-1.5 h-1.5 rounded-full bg-[#EF4444]" />
+              Overdue 14d
+            </div>
+            
+            <span className="flex items-center gap-1.5 px-2.5 py-1 border border-[var(--border-col)] rounded text-[var(--text-secondary)] font-sans text-[0.75rem]">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
+              {item.projectName || "Platform"}
+            </span>
+
+            <span className="flex items-center gap-1.5 px-2.5 py-1 border border-[var(--border-col)] rounded text-[var(--text-secondary)] font-sans text-[0.75rem]">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+              {item.owner || "Unassigned"}
+            </span>
+
+            <span className={`px-2 py-1 font-mono text-[0.65rem] uppercase tracking-wider border rounded-[3px] ${badgeColor}`}>
+              {item.incidentSeverity}
+            </span>
+
+            <span className="px-2 py-1 font-mono text-[0.65rem] uppercase tracking-wider border border-[var(--border-col)] bg-[rgba(0,0,0,0.05)] dark:bg-[rgba(255,255,255,0.05)] text-[var(--text-primary)] rounded-[3px]">
+              {item.status}
+            </span>
+          </div>
+        </div>
+
+        {/* Right Content (Button & Meta) */}
+        <div className="flex flex-col items-start md:items-end gap-2 shrink-0">
+          <button
+            onClick={handleResolveClick}
+            disabled={confirmState === "resolving"}
+            className={`px-4 py-1.5 border rounded-[4px] font-sans text-[0.85rem] font-medium flex items-center gap-2 transition-colors duration-200 ${
+              confirmState === "confirming"
+                ? "bg-[#22C55E] border-[#22C55E] text-white"
+                : "bg-transparent border-[var(--border-col)] text-[var(--text-primary)] hover:bg-[rgba(0,0,0,0.05)] dark:hover:bg-[rgba(255,255,255,0.05)]"
+            } disabled:opacity-50`}
+          >
+            {confirmState === "idle" && (
+              <>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                Resolve
+              </>
+            )}
+            {confirmState === "confirming" && "Click to Confirm"}
+            {confirmState === "resolving" && "Resolving..."}
+          </button>
+          <span className="font-sans text-[0.7rem] text-[var(--text-muted)] text-right w-full">
+            Added 14d ago
+          </span>
+        </div>
+      </div>
+
+      {/* Bottom Footer Row */}
+      <div className="px-6 py-2.5 bg-[rgba(0,0,0,0.02)] dark:bg-[rgba(255,255,255,0.02)] border-t border-[var(--border-col)]">
+        <span className="font-mono text-[0.65rem] text-[var(--text-muted)]">
+          From incident: <span className="font-mono text-[var(--text-secondary)]">{shortIncId} — {item.incidentTitle}</span> · Closed 14d ago
+        </span>
+      </div>
+    </div>
+  );
+};
+
 /* ═══════════════════════════════════════════════════════════════
    DashboardPage
 ═══════════════════════════════════════════════════════════════ */
@@ -323,48 +445,11 @@ const DashboardPage = () => {
             ) : (
               <div className="flex flex-col gap-3">
                 {actionItems.slice(0, 8).map((item) => (
-                  <Link
-                    key={item._id}
-                    to={`/incidents/${item.incidentId}`}
-                    className="flex flex-col md:flex-row md:items-center justify-between p-5 bg-[var(--bg-card)] border border-[var(--border-col)] rounded-none hover:border-amber-500/50 transition-colors gap-3 group"
-                  >
-                    <div className="flex items-start gap-4">
-                      {/* Priority indicator */}
-                      <div className="mt-0.5 w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
-                      <div className="flex flex-col gap-1">
-                        <span className="font-sans text-[0.9rem] text-[var(--text-primary)] leading-snug group-hover:text-amber-500 transition-colors">
-                          {item.task}
-                        </span>
-                        <div className="flex items-center gap-3 flex-wrap">
-                          <span className="font-mono text-[0.6rem] uppercase tracking-wider text-[var(--text-muted)]">
-                            {item.incidentTitle}
-                          </span>
-                          {item.projectName && (
-                            <>
-                              <span className="text-[var(--border-col)]">·</span>
-                              <span className="font-mono text-[0.6rem] uppercase tracking-wider text-[var(--text-muted)]">
-                                {item.projectName}
-                              </span>
-                            </>
-                          )}
-                          {item.owner && (
-                            <>
-                              <span className="text-[var(--border-col)]">·</span>
-                              <span className="font-mono text-[0.6rem] uppercase tracking-wider text-[var(--text-muted)]">
-                                Owner: {item.owner}
-                              </span>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 md:justify-end shrink-0">
-                      <SeverityBadge severity={item.incidentSeverity} />
-                      <span className="font-mono text-[0.6rem] uppercase tracking-widest px-2 py-0.5 border border-amber-500/30 bg-amber-500/10 text-amber-500">
-                        OPEN
-                      </span>
-                    </div>
-                  </Link>
+                  <ActionItemCard 
+                    key={item._id} 
+                    item={item} 
+                    onResolved={(id) => setActionItems(prev => prev.filter(a => a._id !== id))} 
+                  />
                 ))}
               </div>
             )}
