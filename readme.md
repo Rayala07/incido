@@ -22,14 +22,13 @@ Incido is a DevOps and SRE productivity platform for managing production outages
 ```
 Email: developer.rayala@gmail.com
 Password: Reyzox@123
+```
 
 ## Responder Login
 
-```
 Login using google auth or login using email and password
 use any email address to register for responder 
 ***Preffered Google Oauth***
-```
 
 ## Quick Navigation
 
