@@ -1,4 +1,4 @@
-# Incido — Smart Incident Response Platform
+# Incido - Smart Incident Response Platform
 
 ## Team Stack Breakers
 
