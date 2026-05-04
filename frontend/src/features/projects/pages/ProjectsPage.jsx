@@ -159,7 +159,9 @@ const ProjectsPage = () => {
                 No Projects Found
               </span>
               <p className="font-sans text-[0.85rem] text-[var(--text-secondary)] text-center max-w-sm">
-                You don't have any projects yet. Click the "+ Create Project" button to get started.
+                {isAdmin
+                  ? "No projects have been created yet. Click the \"+ Create Project\" button above to get started."
+                  : "You haven't been assigned to any projects yet. Contact your admin or team lead to get added to a project."}
               </p>
             </div>
           ) : (

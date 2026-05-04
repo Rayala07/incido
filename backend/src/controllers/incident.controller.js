@@ -353,6 +353,101 @@ export const getAllIncidents = async (req, res) => {
   }
 };
 
+/* ──────────────────────────────────────────────────────────────────
+   getActionItems
+   Aggregates all open action items from resolved incidents that the
+   authenticated user is authorised to see. Uses the same role-based
+   scoping as getAllIncidents so each role only sees their own scope.
+────────────────────────────────────────────────────────────────── */
+export const getActionItems = async (req, res) => {
+  try {
+    const { id: userId, role } = req.user;
+
+    // ── Step 1: Build the same role-based incident filter as getAllIncidents ──
+    let incidentQuery;
+    if (role === "admin") {
+      incidentQuery = {};
+    } else {
+      const userProjects = await projectModel
+        .find({ "members.user": userId })
+        .select("_id");
+      const projectIds = userProjects.map((p) => p._id);
+      incidentQuery = {
+        $or: [
+          { createdBy: userId },
+          { leader: userId },
+          { members: userId },
+          { isPublic: true },
+          { projectId: { $in: projectIds } },
+        ],
+      };
+    }
+
+    // ── Step 2: Only resolved incidents have postmortems / action items ──
+    const resolvedIncidents = await incidentModel
+      .find({ ...incidentQuery, status: "resolved" })
+      .select("_id title severity projectId")
+      .populate("projectId", "name");
+
+    if (resolvedIncidents.length === 0) {
+      return res.status(200).json({ success: true, count: 0, actionItems: [] });
+    }
+
+    // Build a quick-lookup map: incidentId → { title, severity, projectName }
+    const incidentMap = {};
+    resolvedIncidents.forEach((inc) => {
+      incidentMap[inc._id.toString()] = {
+        title: inc.title,
+        severity: inc.severity,
+        projectName: inc.projectId?.name || "—",
+        incidentId: inc._id,
+      };
+    });
+
+    const incidentIds = resolvedIncidents.map((i) => i._id);
+
+    // ── Step 3: Fetch incidentDetails docs that have at least one open item ──
+    const details = await incidentDetailsModel
+      .find({
+        incidentId: { $in: incidentIds },
+        "actionItems.status": "open",
+      })
+      .select("incidentId actionItems");
+
+    // ── Step 4: Flatten and enrich — only keep open items ──
+    const actionItems = [];
+    details.forEach((d) => {
+      const meta = incidentMap[d.incidentId.toString()];
+      if (!meta) return;
+      d.actionItems.forEach((item) => {
+        if (item.status === "open") {
+          actionItems.push({
+            _id: item._id,
+            task: item.task,
+            owner: item.owner || null,
+            status: item.status,
+            incidentId: meta.incidentId,
+            incidentTitle: meta.title,
+            incidentSeverity: meta.severity,
+            projectName: meta.projectName,
+          });
+        }
+      });
+    });
+
+    return res.status(200).json({
+      success: true,
+      count: actionItems.length,
+      actionItems,
+    });
+  } catch (error) {
+    console.error("Error fetching action items:", error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error" });
+  }
+};
+
 export const closeIncident = async (req, res) => {
   try {
     const { id: userId } = req.user;

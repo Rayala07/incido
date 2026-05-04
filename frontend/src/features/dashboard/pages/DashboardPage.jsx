@@ -81,10 +81,11 @@ const DashboardPage = () => {
   const platformRole = user?.role || "responder";
   const userId = uid(user); // "abc123" — works with both _id and id fields
 
-  const [incidents, setIncidents] = useState([]);
-  const [projects,  setProjects]  = useState([]);
-  const [users,     setUsers]     = useState([]);
-  const [loading,   setLoading]   = useState(true);
+  const [incidents,    setIncidents]    = useState([]);
+  const [projects,     setProjects]     = useState([]);
+  const [users,        setUsers]        = useState([]);
+  const [actionItems,  setActionItems]  = useState([]);
+  const [loading,      setLoading]      = useState(true);
 
   useEffect(() => {
     document.documentElement.classList.add("scrollbar-hide");
@@ -94,12 +95,14 @@ const DashboardPage = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [incRes, projRes] = await Promise.all([
+        const [incRes, projRes, actRes] = await Promise.all([
           incidentService.getAllIncidents(),
           projectService.getAllProjects(),
+          incidentService.getActionItems(),
         ]);
-        setIncidents(incRes.incidents || []);
-        setProjects(projRes.projects  || []);
+        setIncidents(incRes.incidents    || []);
+        setProjects(projRes.projects     || []);
+        setActionItems(actRes.actionItems || []);
 
         if (platformRole === "admin") {
           const usrRes = await authService.getAllUsers();
@@ -194,9 +197,9 @@ const DashboardPage = () => {
 
   /* ── Role config ── */
   const config = {
-    admin:     { banner: "ADMINISTRATIVE ACCESS — VIEWING GLOBAL NUMBERS ACROSS ALL TEAMS", activeTitle: "ACTIVE INCIDENTS", projTitle: "ALL PROJECTS" },
-    leader:    { banner: "LEADER VIEW — SCOPED TO MANAGED PROJECTS",                        activeTitle: "ACTIVE INCIDENTS", projTitle: "PROJECTS YOU LEAD" },
-    responder: { banner: "RESPONDER WORKSPACE — INDIVIDUAL SCOPE",                          activeTitle: "ASSIGNED TO ME",   projTitle: "MY PROJECTS" },
+    admin:     { banner: "ADMINISTRATIVE ACCESS — VIEWING GLOBAL NUMBERS ACROSS ALL TEAMS", activeTitle: "ACTIVE INCIDENTS",   projTitle: "ALL PROJECTS",       actionTitle: "OPEN ACTION ITEMS — PLATFORM WIDE" },
+    leader:    { banner: "LEADER VIEW — SCOPED TO MANAGED PROJECTS",                        activeTitle: "ACTIVE INCIDENTS",   projTitle: "PROJECTS YOU LEAD", actionTitle: "OPEN ACTION ITEMS — YOUR PROJECTS" },
+    responder: { banner: "RESPONDER WORKSPACE — INDIVIDUAL SCOPE",                          activeTitle: "ASSIGNED TO ME",     projTitle: "MY PROJECTS",       actionTitle: "OPEN ACTION ITEMS — ASSIGNED TO ME" },
   };
   const ui = config[role] || config.responder;
 
@@ -301,6 +304,70 @@ const DashboardPage = () => {
                 ))
               )}
             </div>
+          </div>
+
+          {/* ── Open Action Items ── */}
+          <div>
+            <SectionHeader
+              title={ui.actionTitle}
+              action={
+                actionItems.length > 0 && (
+                  <span className="font-mono text-[0.6rem] uppercase tracking-widest text-amber-500 border border-amber-500/30 bg-amber-500/10 px-2 py-0.5">
+                    {actionItems.length} OPEN
+                  </span>
+                )
+              }
+            />
+            {actionItems.length === 0 ? (
+              <EmptyState message="No open action items — all clear." />
+            ) : (
+              <div className="flex flex-col gap-3">
+                {actionItems.slice(0, 8).map((item) => (
+                  <Link
+                    key={item._id}
+                    to={`/incidents/${item.incidentId}`}
+                    className="flex flex-col md:flex-row md:items-center justify-between p-5 bg-[var(--bg-card)] border border-[var(--border-col)] rounded-none hover:border-amber-500/50 transition-colors gap-3 group"
+                  >
+                    <div className="flex items-start gap-4">
+                      {/* Priority indicator */}
+                      <div className="mt-0.5 w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                      <div className="flex flex-col gap-1">
+                        <span className="font-sans text-[0.9rem] text-[var(--text-primary)] leading-snug group-hover:text-amber-500 transition-colors">
+                          {item.task}
+                        </span>
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <span className="font-mono text-[0.6rem] uppercase tracking-wider text-[var(--text-muted)]">
+                            {item.incidentTitle}
+                          </span>
+                          {item.projectName && (
+                            <>
+                              <span className="text-[var(--border-col)]">·</span>
+                              <span className="font-mono text-[0.6rem] uppercase tracking-wider text-[var(--text-muted)]">
+                                {item.projectName}
+                              </span>
+                            </>
+                          )}
+                          {item.owner && (
+                            <>
+                              <span className="text-[var(--border-col)]">·</span>
+                              <span className="font-mono text-[0.6rem] uppercase tracking-wider text-[var(--text-muted)]">
+                                Owner: {item.owner}
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 md:justify-end shrink-0">
+                      <SeverityBadge severity={item.incidentSeverity} />
+                      <span className="font-mono text-[0.6rem] uppercase tracking-widest px-2 py-0.5 border border-amber-500/30 bg-amber-500/10 text-amber-500">
+                        OPEN
+                      </span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* ── Projects ── */}
