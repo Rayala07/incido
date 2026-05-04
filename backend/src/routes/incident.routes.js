@@ -13,6 +13,7 @@ import {
   getTimeline,
   addTimelineEntry,
   getIncidentDetails,
+  downloadPostmortemPDF,
 } from "../controllers/incident.controller.js"
 import {
   createTimelineEntry,
@@ -40,6 +41,8 @@ incidentRoutes.patch("/:id", verifyUser, updateIncidentValidator, updateIncident
 
 incidentRoutes.post("/:id/timeline", verifyUser, createTimelineEntry)
 incidentRoutes.get("/:id/timeline", verifyUser, getTimelineForIncident)
+
+incidentRoutes.get("/:id/download-pdf", verifyUser, downloadPostmortemPDF)
 
 incidentRoutes.delete("/:id", verifyUser, deleteIncident)
 
